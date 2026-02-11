@@ -17,7 +17,7 @@
     {
       "type": "shell",
       "label": "mkdir-build-dir",
-      "command": "mkdir .build",
+      "command": "mkdir -p .build",
       "group": "build",
     }
   ]
