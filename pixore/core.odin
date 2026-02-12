@@ -13,7 +13,7 @@ Pixore :: struct {
 	title:          string,
 	stop_requested: bool,
 	camera:         rl.Camera2D,
-	palette:        map[int]rl.Color,
+	palette:        []rl.Color,
 	canvas:         rl.RenderTexture2D,
 	resolution:     rl.Vector2,
 	color:          int,
@@ -37,6 +37,7 @@ create :: proc() -> Pixore {
 }
 
 save :: proc(p: Pixore) {
+	log.info("Saving game")
 	co.save_project_config(
 		{
 			width = p.width,

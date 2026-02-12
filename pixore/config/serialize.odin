@@ -1,10 +1,13 @@
 package config
 
 import "core:fmt"
+import "core:log"
 import "core:strings"
 import rl "vendor:raylib"
 
 serialize :: proc(config: Config, allocator := context.allocator) -> string {
+	log.info("Serializing config")
+
 	builder := strings.builder_make()
 	defer strings.builder_destroy(&builder)
 
@@ -36,9 +39,9 @@ write_number_property :: proc(builder: ^strings.Builder, name: string, value: f3
 }
 
 
-write_array_property :: proc(builder: ^strings.Builder, name: string, palette: map[int]rl.Color) {
+write_array_property :: proc(builder: ^strings.Builder, name: string, palette: []rl.Color) {
 	fmt.sbprint(builder, name, "=", "[", sep = "")
-	for index, item in palette {
+	for item, index in palette {
 		if (index != 0) {
 			fmt.sbprint(builder, ",", sep = "")
 		}

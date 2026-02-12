@@ -1,6 +1,5 @@
 package pixore
 
-import "core:fmt"
 import rl "vendor:raylib"
 
 
@@ -8,12 +7,16 @@ import rl "vendor:raylib"
 get_color :: proc(id: int = -1) -> rl.Color {
 	p := (^Pixore)(context.user_ptr)
 
-	id := id if id != -1 else p.color
+	id := id
 
-	color, ok := p.palette[id]
+	if id >= len(p.palette) {
+		id = -1
+	}
 
-	// NOTE: it might be a good idea to return the zero value here
-	assert(ok, fmt.tprint("Color Id, is invalid", id))
+	id = id if id != -1 else p.color
+
+
+	color := p.palette[id]
 
 	return color
 }

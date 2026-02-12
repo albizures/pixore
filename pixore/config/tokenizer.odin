@@ -9,6 +9,12 @@ import "core:unicode/utf8"
 MULTILINE :: `"""`
 CUTSET :: "\n"
 
+Number :: union {
+	i64,
+	uint,
+	f32,
+}
+
 Span :: struct {
 	start, end: int,
 }
@@ -31,7 +37,7 @@ Equal_Token :: struct {
 
 Number_Token :: struct {
 	span:  Span,
-	value: f32,
+	value: Number,
 }
 
 String_Token :: struct {
@@ -139,13 +145,15 @@ get_token :: proc(t: ^Tokenizer, loc := #caller_location) -> (token: Token) {
 		}
 	case '0' ..= '9':
 		start := t.index
-		num := con_number(t)
+		value := con_number(t)
 		end := t.index
-		value, ok := strconv.parse_f32(num)
-		assert(ok, fmt.tprint("Invalid number:", num))
+
+		num, ok := convert_to_number(value)
+		assert(ok, "Unable to convert to int")
+
 		token = Number_Token {
 			span  = {start, end},
-			value = value,
+			value = num,
 		}
 	case '"':
 		start := t.index
@@ -246,6 +254,19 @@ con_number :: proc(t: ^Tokenizer) -> string {
 	}
 
 	return t.data[start:]
+}
+
+convert_to_number :: proc(value: string) -> (num: Number, ok: bool) {
+	if strings.contains_rune(value, '.') {
+		num, ok = strconv.parse_f32(value)
+
+	} else if strings.contains_rune(value, '-') {
+		num, ok = strconv.parse_i64(value)
+	} else {
+		num, ok = strconv.parse_uint(value)
+	}
+
+	return
 }
 
 con_multiline_string :: proc(t: ^Tokenizer) -> string {

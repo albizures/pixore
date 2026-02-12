@@ -1,7 +1,10 @@
 package config
 
+import "core:c"
+import "core:strings"
 
 import "core:fmt"
+import "core:log"
 import "core:os"
 import rl "vendor:raylib"
 
@@ -9,12 +12,12 @@ Config :: struct {
 	width, height: i32,
 	title:         string,
 	resolution:    rl.Vector2,
-	palette:       map[int]rl.Color,
+	palette:       []rl.Color,
 }
 
 get_project_config :: proc() -> Config {
 	bytes, ok := os.read_entire_file("config.pixore", context.temp_allocator)
-	defer delete(bytes)
+	// defer delete(bytes) // this gives 'pointer being freed was not allocated', not sure why
 	if !ok {
 		return create_project_config()
 	}
@@ -32,33 +35,63 @@ get_project_config :: proc() -> Config {
 	height := get_number_value(parser.values, "height")
 	res_x := get_number_value(parser.values, "res_x")
 	res_y := get_number_value(parser.values, "res_y")
+	palette := get_palette(get_array_value(parser.values, "palette"))
 
 	return Config {
 		title      = title,
 		width      = i32(width),
 		height     = i32(height),
-		resolution = {res_x, res_y},
+		resolution = {f32(res_x), f32(res_y)},
 		// TODO get palette from config
-		palette    = create_default_palette(),
+		palette    = palette,
 	}
 }
 
-get_string_value :: proc(values: map[string]Value, name: string) -> string {
+get_string_value :: proc(values: map[string]ConfigValue, name: string) -> string {
 	value, exists := values[name]
 	assert(exists, fmt.tprint("Missing value for:", name))
 	real_value, is_valid := value.(string)
 	assert(is_valid, fmt.tprint("Value for \"", name, "\" is not a string"))
 
-	return real_value
+	return strings.clone(real_value)
 }
 
-get_number_value :: proc(values: map[string]Value, name: string) -> f32 {
+get_number_value :: proc(values: map[string]ConfigValue, name: string) -> uint {
 	value, exists := values[name]
 	assert(exists, fmt.tprint("Missing value for:", name))
-	real_value, is_valid := value.(f32)
+	real_value, is_valid := value.(uint)
 	assert(is_valid, fmt.tprint("Value for \"", name, "\" is not a number"))
 
 	return real_value
+}
+
+get_array_value :: proc(values: map[string]ConfigValue, name: string) -> []ConfigSimpleValue {
+	value, exists := values[name]
+	assert(exists, fmt.tprint("Missing value for:", name))
+
+	colors, is_valid := value.([dynamic]ConfigSimpleValue)
+	assert(is_valid, fmt.tprint("Value for \"", name, "\" is not a number"))
+
+	return colors[:]
+}
+
+get_palette :: proc(colors: []ConfigSimpleValue) -> []rl.Color {
+	palette := make([dynamic]rl.Color)
+
+	for maybe_color in colors {
+		switch color in maybe_color {
+		case string:
+			assert(false, "Colors are expected to be uint")
+		case f32:
+			assert(false, "Colors are expected to be uint")
+		case i64:
+			append(&palette, rl.GetColor(c.uint(color)))
+		case uint:
+			append(&palette, rl.GetColor(c.uint(color)))
+		}
+	}
+
+	return palette[:]
 }
 
 
@@ -83,6 +116,7 @@ save_project_config :: proc(config: Config) {
 
 	data_as_bytes := transmute([]byte)(str)
 
+	log.info("Saving file")
 	// TODO: handle errors
 	os.write_entire_file("config.pixore", data_as_bytes)
 }
@@ -129,11 +163,11 @@ symbols := []rune {
 }
 
 
-create_default_palette :: proc() -> map[int]rl.Color {
-	colors := make(map[int]rl.Color)
-
+create_default_palette :: proc() -> []rl.Color {
+	colors := make([]rl.Color, 16)
 	colors[0] = {0, 0, 0, 0}
 	colors[1] = {29, 43, 83, 255}
+	// colors[2] = rl.BLACK //{126, 37, 83, 255}
 	colors[2] = {126, 37, 83, 255}
 	colors[3] = {0, 135, 81, 255}
 	colors[4] = {171, 82, 54, 255}
@@ -149,5 +183,5 @@ create_default_palette :: proc() -> map[int]rl.Color {
 	colors[14] = {255, 119, 168, 255}
 	colors[15] = {255, 204, 170, 255}
 
-	return colors
+	return colors[:]
 }

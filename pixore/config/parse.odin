@@ -9,7 +9,7 @@ Parser :: struct {
 	tokenizer: Tokenizer,
 	current:   Token,
 	errors:    [dynamic]Error,
-	values:    map[string]Value,
+	values:    map[string]ConfigValue,
 	next:      Token,
 	allocator: mem.Allocator,
 }
@@ -18,22 +18,26 @@ Error :: struct {
 	message: string,
 }
 
-
-PrimitiveValue :: union {
+ConfigSimpleValue :: union {
 	string,
+	i64,
+	uint,
 	f32,
 }
 
-Value :: union {
-	string,
+
+ConfigValue :: union {
+	i64,
+	uint,
 	f32,
-	[dynamic]PrimitiveValue,
+	string,
+	[dynamic]ConfigSimpleValue,
 }
 
 make_parser :: proc(content: string, allocator := context.allocator) -> Parser {
 	parser := Parser {
 		tokenizer = make_tokenizer(content),
-		values    = make(map[string]Value, allocator),
+		values    = make(map[string]ConfigValue, allocator),
 		errors    = make([dynamic]Error, allocator),
 	}
 
@@ -45,7 +49,7 @@ make_parser :: proc(content: string, allocator := context.allocator) -> Parser {
 destroy_parser :: proc(parser: ^Parser) {
 	delete(parser.errors)
 	for key, item in parser.values {
-		if arr, ok := item.([dynamic]PrimitiveValue); ok {
+		if arr, ok := item.([dynamic]ConfigSimpleValue); ok {
 			delete(arr)
 		}
 	}
@@ -76,7 +80,10 @@ parse :: proc(parser: ^Parser) {
 		     Start_Arr_Token,
 		     Comma_Token,
 		     SOF_Token:
-			append(&parser.errors, Error{message = "Invalid syntax, not expected token"})
+			append(
+				&parser.errors,
+				Error{message = fmt.tprint("Invalid syntax, not expected token", t)},
+			)
 		}
 	}
 }
@@ -104,12 +111,37 @@ parse_property :: proc(parser: ^Parser) {
 	case String_Token:
 		parser.values[ident.value] = token.value
 	case Number_Token:
-		parser.values[ident.value] = token.value
+		parser.values[ident.value] = to_value(token.value)
 	case Start_Arr_Token:
 		parse_array(ident.value, parser)
 	case Ident_Token, Equal_Token, Invalid_Token, End_Arr_Token, EOF_Token, SOF_Token, Comma_Token:
 		append(&parser.errors, Error{message = "Invalid value"})
 	}
+}
+
+to_value :: proc(num: Number) -> (value: ConfigValue) {
+	switch v in num {
+	case i64:
+		value = v
+	case uint:
+		value = v
+	case f32:
+		value = v
+	}
+
+	return
+}
+to_simple_value :: proc(num: Number) -> (value: ConfigSimpleValue) {
+	switch v in num {
+	case i64:
+		value = v
+	case uint:
+		value = v
+	case f32:
+		value = v
+	}
+
+	return
 }
 
 
@@ -125,7 +157,7 @@ parse_array :: proc(name: string, parser: ^Parser) {
 		next(parser) // skip comma
 	}
 
-	values := make([dynamic]PrimitiveValue, parser.allocator)
+	values := make([dynamic]ConfigSimpleValue, parser.allocator)
 
 	loop: for {
 		switch t in next(parser) {
@@ -134,7 +166,7 @@ parse_array :: proc(name: string, parser: ^Parser) {
 		case String_Token:
 			append(&values, t.value)
 		case Number_Token:
-			append(&values, t.value)
+			append(&values, to_simple_value(t.value))
 		case SOF_Token,
 		     End_Arr_Token,
 		     Comma_Token,
@@ -149,6 +181,7 @@ parse_array :: proc(name: string, parser: ^Parser) {
 		case Comma_Token:
 			next(parser)
 		case End_Arr_Token:
+			next(parser)
 			break loop
 		case:
 			append(&parser.errors, Error{message = "Invalid syntax: unexpected comma"})
