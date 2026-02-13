@@ -1,11 +1,12 @@
 package config
 
+import "../base"
 import "core:fmt"
 import "core:log"
 import "core:strings"
 import rl "vendor:raylib"
 
-serialize :: proc(config: Config, allocator := context.allocator) -> string {
+serialize :: proc(config: base.Config, allocator := context.allocator) -> string {
 	log.info("Serializing config")
 
 	builder := strings.builder_make()

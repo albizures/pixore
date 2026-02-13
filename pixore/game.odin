@@ -1,5 +1,6 @@
 package pixore
 
+import "base"
 import co "config"
 import "core:c"
 import "core:fmt"
@@ -8,17 +9,7 @@ import "core:strings"
 import rl "vendor:raylib"
 import gl "vendor:raylib/rlgl"
 
-Pixore :: struct {
-	width, height:  i32,
-	title:          string,
-	stop_requested: bool,
-	camera:         rl.Camera2D,
-	palette:        []rl.Color,
-	canvas:         rl.RenderTexture2D,
-	resolution:     rl.Vector2,
-	color:          int,
-}
-
+Pixore :: base.Pixore
 
 create :: proc() -> Pixore {
 	log.info("Creating pixore game")

@@ -3,19 +3,13 @@ package config
 import "core:c"
 import "core:strings"
 
+import "../base"
 import "core:fmt"
 import "core:log"
 import "core:os"
 import rl "vendor:raylib"
 
-Config :: struct {
-	width, height: i32,
-	title:         string,
-	resolution:    rl.Vector2,
-	palette:       []rl.Color,
-}
-
-get_project_config :: proc() -> Config {
+get_project_config :: proc() -> base.Config {
 	bytes, ok := os.read_entire_file("config.pixore", context.temp_allocator)
 	// defer delete(bytes) // this gives 'pointer being freed was not allocated', not sure why
 	if !ok {
@@ -37,7 +31,7 @@ get_project_config :: proc() -> Config {
 	res_y := get_number_value(parser.values, "res_y")
 	palette := get_palette(get_array_value(parser.values, "palette"))
 
-	return Config {
+	return base.Config {
 		title      = title,
 		width      = i32(width),
 		height     = i32(height),
@@ -95,9 +89,9 @@ get_palette :: proc(colors: []ConfigSimpleValue) -> []rl.Color {
 }
 
 
-create_project_config :: proc() -> Config {
+create_project_config :: proc() -> base.Config {
 	// TODO update this proc to ask for the values instead of using defaults
-	config := Config {
+	config := base.Config {
 		width      = 800,
 		height     = 500,
 		title      = "My Odin Game",
@@ -110,7 +104,7 @@ create_project_config :: proc() -> Config {
 	return config
 }
 
-save_project_config :: proc(config: Config) {
+save_project_config :: proc(config: base.Config) {
 	str := serialize(config, context.allocator)
 	defer delete(str)
 
