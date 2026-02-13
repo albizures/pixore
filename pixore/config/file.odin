@@ -13,31 +13,33 @@ get_project_config :: proc() -> base.Config {
 	bytes, ok := os.read_entire_file("config.pixore", context.temp_allocator)
 	// defer delete(bytes) // this gives 'pointer being freed was not allocated', not sure why
 	if !ok {
+		log.info("Config not found, creating a new one")
 		return create_project_config()
 	}
-
+	log.info("Config found, parsing it...")
 	content := string(bytes)
 	parser := make_parser(content, context.allocator)
 	defer destroy_parser(&parser)
 	parse(&parser)
-	fmt.println(parser.values, parser.errors[:])
 
 	assert(len(parser.errors) == 0, "There are syntax errors in the project file")
 
 	title := get_string_value(parser.values, "title")
-	width := get_number_value(parser.values, "width")
-	height := get_number_value(parser.values, "height")
-	res_x := get_number_value(parser.values, "res_x")
-	res_y := get_number_value(parser.values, "res_y")
+	width := get_uint_value(parser.values, "width")
+	height := get_uint_value(parser.values, "height")
+	res_x := get_uint_value(parser.values, "res_x")
+	res_y := get_uint_value(parser.values, "res_y")
 	palette := get_palette(get_array_value(parser.values, "palette"))
+	sprite_size := get_uint_value(parser.values, "sprite_size")
+	sprite_data := get_sprite(get_string_value(parser.values, "sprite"))
 
 	return base.Config {
-		title      = title,
-		width      = i32(width),
-		height     = i32(height),
+		title = title,
+		width = i32(width),
+		height = i32(height),
 		resolution = {f32(res_x), f32(res_y)},
-		// TODO get palette from config
-		palette    = palette,
+		palette = palette,
+		sprite = {data = sprite_data, size = sprite_size},
 	}
 }
 
@@ -50,7 +52,7 @@ get_string_value :: proc(values: map[string]ConfigValue, name: string) -> string
 	return strings.clone(real_value)
 }
 
-get_number_value :: proc(values: map[string]ConfigValue, name: string) -> uint {
+get_uint_value :: proc(values: map[string]ConfigValue, name: string) -> uint {
 	value, exists := values[name]
 	assert(exists, fmt.tprint("Missing value for:", name))
 	real_value, is_valid := value.(uint)
@@ -74,12 +76,7 @@ get_palette :: proc(colors: []Value) -> []rl.Color {
 
 	for maybe_color in colors {
 		switch color in maybe_color {
-		case string:
-			assert(false, "Colors are expected to be uint")
-		case f32:
-			assert(false, "Colors are expected to be uint")
-		case i64:
-			append(&palette, rl.GetColor(c.uint(color)))
+		case string, f32, i64:
 		case uint:
 			append(&palette, rl.GetColor(c.uint(color)))
 		}
@@ -87,16 +84,39 @@ get_palette :: proc(colors: []Value) -> []rl.Color {
 
 	return palette[:]
 }
+get_sprite :: proc(sprite: string) -> [dynamic]uint {
+	sprite, replaceOk := strings.replace_all(sprite, "\n", "", context.allocator)
+	defer delete(sprite)
+	assert(replaceOk, "unable to replace enter by spaces")
+
+	values := make([dynamic]uint)
+
+	codes := base.palette_codes_to_map()
+
+	for r in sprite {
+		value, ok := codes[r]
+		assert(ok, "Invalid palette code found")
+
+		append(&values, value)
+	}
+
+	return values
+}
 
 
 create_project_config :: proc() -> base.Config {
+	sprite_default_size: uint = 128
 	// TODO update this proc to ask for the values instead of using defaults
 	config := base.Config {
-		width      = 800,
-		height     = 500,
-		title      = "My Odin Game",
+		width = 800,
+		height = 500,
+		title = "My Odin Game",
 		resolution = {128, 128},
-		palette    = create_default_palette(),
+		palette = create_default_palette(),
+		sprite = {
+			data = make([dynamic]uint, sprite_default_size * sprite_default_size),
+			size = sprite_default_size,
+		},
 	}
 
 	save_project_config(config)
@@ -113,47 +133,6 @@ save_project_config :: proc(config: base.Config) {
 	log.info("Saving file")
 	// TODO: handle errors
 	os.write_entire_file("config.pixore", data_as_bytes)
-}
-
-
-// order matter
-symbols := []rune {
-	rune(34),
-	rune(35),
-	rune(36),
-	rune(37),
-	rune(38),
-	rune(39),
-	rune(40),
-	rune(41),
-	rune(42),
-	rune(43),
-	rune(44),
-	rune(45),
-	rune(46),
-	rune(47),
-	rune(48),
-	rune(49),
-	rune(50),
-	rune(51),
-	rune(52),
-	rune(53),
-	rune(54),
-	rune(55),
-	rune(56),
-	rune(57),
-	rune(58),
-	rune(59),
-	rune(60),
-	rune(61),
-	rune(62),
-	rune(63),
-	rune(64),
-	rune(65),
-	rune(66),
-	rune(67),
-	rune(68),
-	rune(69),
 }
 
 

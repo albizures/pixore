@@ -17,7 +17,8 @@ serialize :: proc(config: base.Config, allocator := context.allocator) -> string
 	write_number_property(&builder, "height", f32(config.height))
 	write_number_property(&builder, "res_x", f32(config.resolution.x))
 	write_number_property(&builder, "res_y", f32(config.resolution.y))
-	write_array_property(&builder, "palette", config.palette)
+	write_palette(&builder, config.palette)
+	write_sprite(&builder, config.sprite)
 
 	return strings.clone(strings.to_string(builder))
 }
@@ -40,8 +41,8 @@ write_number_property :: proc(builder: ^strings.Builder, name: string, value: f3
 }
 
 
-write_array_property :: proc(builder: ^strings.Builder, name: string, palette: []rl.Color) {
-	fmt.sbprint(builder, name, "=", "[", sep = "")
+write_palette :: proc(builder: ^strings.Builder, palette: []rl.Color) {
+	fmt.sbprint(builder, "palette=[", sep = "")
 	for item, index in palette {
 		if (index != 0) {
 			fmt.sbprint(builder, ",", sep = "")
@@ -51,4 +52,22 @@ write_array_property :: proc(builder: ^strings.Builder, name: string, palette: [
 	}
 
 	fmt.sbprintln(builder, "]", sep = "")
+}
+
+write_sprite :: proc(builder: ^strings.Builder, sprite: base.Sprite) {
+	fmt.sbprint(builder, `sprite="""`, sep = "")
+	for item, index in sprite.data {
+		if uint(index) % sprite.size == 0 {
+			fmt.sbprint(builder, "\n", sep = "")
+		}
+
+		assert(
+			item < len(base.PALETTE_CODES),
+			"It seems the palette is too long, increase palette code",
+		)
+
+		fmt.sbprint(builder, base.PALETTE_CODES[item], sep = "")
+	}
+
+	fmt.sbprintln(builder, `"""`, sep = "")
 }

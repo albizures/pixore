@@ -50,7 +50,6 @@ destroy_parser :: proc(parser: ^Parser) {
 
 parse :: proc(parser: ^Parser) {
 	for {
-		// log.warn("/////", parser)
 		_, ok := parser.current.(EOF_Token)
 		if ok {
 			break

@@ -15,13 +15,14 @@ create :: proc() -> Pixore {
 	log.info("Creating pixore game")
 
 	config := co.get_project_config()
-	log.info("Using found", config)
+
 	pixore := Pixore {
 		width      = config.width,
 		height     = config.height,
 		title      = config.title,
 		resolution = config.resolution,
 		palette    = config.palette,
+		sprite     = config.sprite,
 	}
 
 	return pixore
@@ -36,6 +37,7 @@ save :: proc(p: Pixore) {
 			title = p.title,
 			resolution = p.resolution,
 			palette = p.palette,
+			sprite = p.sprite,
 		},
 	)
 }
@@ -72,7 +74,6 @@ start :: proc(
 		margin = {extra_space / 2, 0}
 	}
 
-	fmt.println(margin, final_size)
 
 	context.user_ptr = pixore
 	for !pixore.stop_requested {
