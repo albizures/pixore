@@ -27,10 +27,11 @@ Pixore :: struct {
 	resolution:     rl.Vector2,
 	color:          int,
 	sprite:         Sprite,
+	sprite_texture: rl.RenderTexture2D,
 }
 
 PALETTE_CODES := [?]rune {
-	'.',
+	'o',
 	'1',
 	'2',
 	'3',

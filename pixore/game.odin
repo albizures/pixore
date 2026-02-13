@@ -57,6 +57,7 @@ start :: proc(
 	assert(res_y > 0, "resolution height is zero")
 
 	pixore.camera.zoom = 1
+	pixore.sprite_texture = rl.LoadRenderTexture(i32(pixore.sprite.size), i32(pixore.sprite.size))
 	pixore.canvas = rl.LoadRenderTexture(i32(res_x), i32(res_y))
 
 	final_size: f32
@@ -76,6 +77,19 @@ start :: proc(
 
 
 	context.user_ptr = pixore
+	cols := pixore.sprite.size
+	rows := pixore.sprite.size
+	rl.BeginTextureMode(pixore.sprite_texture)
+	for value, index in pixore.sprite.data {
+		x := index % int(cols)
+		y := index / int(rows)
+
+		rl.DrawPixel(c.int(x), c.int(y), get_color(int(value)))
+	}
+
+	rl.EndTextureMode()
+
+
 	for !pixore.stop_requested {
 		if rl.WindowShouldClose() {
 			pixore.stop_requested = true

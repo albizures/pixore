@@ -105,7 +105,7 @@ get_sprite :: proc(sprite: string) -> [dynamic]uint {
 
 
 create_project_config :: proc() -> base.Config {
-	sprite_default_size: uint = 128
+	sprite_default_size: uint = 16
 	// TODO update this proc to ask for the values instead of using defaults
 	config := base.Config {
 		width = 800,

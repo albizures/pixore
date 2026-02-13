@@ -44,8 +44,14 @@ draw :: proc(state: Game_State) {
 	p.circle(20, 20, 6, 2)
 	p.rect_fill(50, 50, 50, 50, 6)
 
+	p.spr(0, 0, 3, 3, 10, 50)
+	// p.spr(13, 13, 3, 3, 10, 50)
+
+
 	p.translate(50, 50)
 	p.rect_fill(50, 50, 50, 50, 4)
+
+
 }
 
 shake :: proc(shake_duration: ^f32, shake_intensity: ^f32) {

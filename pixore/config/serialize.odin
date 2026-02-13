@@ -18,6 +18,7 @@ serialize :: proc(config: base.Config, allocator := context.allocator) -> string
 	write_number_property(&builder, "res_x", f32(config.resolution.x))
 	write_number_property(&builder, "res_y", f32(config.resolution.y))
 	write_palette(&builder, config.palette)
+	write_number_property(&builder, "sprite_size", f32(config.sprite.size))
 	write_sprite(&builder, config.sprite)
 
 	return strings.clone(strings.to_string(builder))
