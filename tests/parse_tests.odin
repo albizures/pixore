@@ -20,8 +20,8 @@ test_number_property :: proc(t: ^testing.T) {
 		fmt.tprint("expect no errors, got:", len(parser.errors)),
 	)
 
-	value, ok := parser.values["test"].(f32)
-	testing.expect(t, ok, "value should be f32")
+	value, ok := parser.values["test"].(uint)
+	testing.expect(t, ok, "value should be uint")
 	testing.expect_value(t, value, 123)
 }
 
@@ -76,12 +76,12 @@ test_array_property :: proc(t: ^testing.T) {
 
 	parse(&parser)
 
-	value, ok := parser.values["test"].([dynamic]PrimitiveValue)
+	value, ok := parser.values["test"].([dynamic]Value)
 	testing.expect(t, ok, "value should be an array")
 
 	for item, i in value {
-		item_val, ok := item.(f32)
-		testing.expect(t, ok, "value should be f32")
-		testing.expect_value(t, item_val, f32(i + 1))
+		item_val, ok := item.(uint)
+		testing.expect(t, ok, "value should be uint")
+		testing.expect_value(t, item_val, uint(i + 1))
 	}
 }

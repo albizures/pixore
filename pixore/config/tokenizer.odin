@@ -9,10 +9,18 @@ import "core:unicode/utf8"
 MULTILINE :: `"""`
 CUTSET :: "\n"
 
-Number :: union {
+Tokenizer :: struct {
+	data:    string,
+	current: rune,
+	index:   int,
+	width:   int,
+}
+
+Value :: union {
 	i64,
 	uint,
 	f32,
+	string,
 }
 
 Span :: struct {
@@ -35,14 +43,9 @@ Equal_Token :: struct {
 	span: Span,
 }
 
-Number_Token :: struct {
+Value_Token :: struct {
 	span:  Span,
-	value: Number,
-}
-
-String_Token :: struct {
-	span:  Span,
-	value: string,
+	value: Value,
 }
 
 Start_Arr_Token :: struct {
@@ -75,14 +78,12 @@ Token :: union #no_nil {
 	Invalid_Token,
 	Ident_Token,
 	Equal_Token,
-	Number_Token,
-	String_Token,
+	Value_Token,
 	Start_Arr_Token,
 	End_Arr_Token,
 	Comma_Token,
 	EOF_Token,
 }
-
 
 is_letter :: proc(r: rune) -> bool {
 	c := u8(r)
@@ -92,14 +93,6 @@ is_letter :: proc(r: rune) -> bool {
 is_number :: proc(r: rune) -> bool {
 	c := u8(r)
 	return c >= '0' && c <= '9'
-}
-
-
-Tokenizer :: struct {
-	data:    string,
-	current: rune,
-	index:   int,
-	width:   int,
 }
 
 make_tokenizer :: proc(data: string) -> Tokenizer {
@@ -151,7 +144,7 @@ get_token :: proc(t: ^Tokenizer, loc := #caller_location) -> (token: Token) {
 		num, ok := convert_to_number(value)
 		assert(ok, "Unable to convert to int")
 
-		token = Number_Token {
+		token = Value_Token {
 			span  = {start, end},
 			value = num,
 		}
@@ -159,7 +152,7 @@ get_token :: proc(t: ^Tokenizer, loc := #caller_location) -> (token: Token) {
 		start := t.index
 		value := con_string(t)
 		end := t.index
-		token = String_Token {
+		token = Value_Token {
 			span  = {start, end},
 			value = value,
 		}
@@ -256,7 +249,7 @@ con_number :: proc(t: ^Tokenizer) -> string {
 	return t.data[start:]
 }
 
-convert_to_number :: proc(value: string) -> (num: Number, ok: bool) {
+convert_to_number :: proc(value: string) -> (num: Value, ok: bool) {
 	if strings.contains_rune(value, '.') {
 		num, ok = strconv.parse_f32(value)
 

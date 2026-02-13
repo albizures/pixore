@@ -4,7 +4,6 @@ import "core:fmt"
 import "core:log"
 import "core:mem"
 
-
 Parser :: struct {
 	tokenizer: Tokenizer,
 	current:   Token,
@@ -18,20 +17,13 @@ Error :: struct {
 	message: string,
 }
 
-ConfigSimpleValue :: union {
-	string,
-	i64,
-	uint,
-	f32,
-}
-
 
 ConfigValue :: union {
 	i64,
 	uint,
 	f32,
 	string,
-	[dynamic]ConfigSimpleValue,
+	[dynamic]Value,
 }
 
 make_parser :: proc(content: string, allocator := context.allocator) -> Parser {
@@ -49,7 +41,7 @@ make_parser :: proc(content: string, allocator := context.allocator) -> Parser {
 destroy_parser :: proc(parser: ^Parser) {
 	delete(parser.errors)
 	for key, item in parser.values {
-		if arr, ok := item.([dynamic]ConfigSimpleValue); ok {
+		if arr, ok := item.([dynamic]Value); ok {
 			delete(arr)
 		}
 	}
@@ -73,13 +65,7 @@ parse :: proc(parser: ^Parser) {
 		// nothing yet
 		case EOF_Token:
 			break
-		case Equal_Token,
-		     Number_Token,
-		     String_Token,
-		     End_Arr_Token,
-		     Start_Arr_Token,
-		     Comma_Token,
-		     SOF_Token:
+		case Equal_Token, Value_Token, End_Arr_Token, Start_Arr_Token, Comma_Token, SOF_Token:
 			append(
 				&parser.errors,
 				Error{message = fmt.tprint("Invalid syntax, not expected token", t)},
@@ -108,9 +94,7 @@ parse_property :: proc(parser: ^Parser) {
 	}
 
 	switch token in next(parser) {
-	case String_Token:
-		parser.values[ident.value] = token.value
-	case Number_Token:
+	case Value_Token:
 		parser.values[ident.value] = to_value(token.value)
 	case Start_Arr_Token:
 		parse_array(ident.value, parser)
@@ -119,25 +103,15 @@ parse_property :: proc(parser: ^Parser) {
 	}
 }
 
-to_value :: proc(num: Number) -> (value: ConfigValue) {
-	switch v in num {
+to_value :: proc(val: Value) -> (value: ConfigValue) {
+	switch v in val {
 	case i64:
 		value = v
 	case uint:
 		value = v
 	case f32:
 		value = v
-	}
-
-	return
-}
-to_simple_value :: proc(num: Number) -> (value: ConfigSimpleValue) {
-	switch v in num {
-	case i64:
-		value = v
-	case uint:
-		value = v
-	case f32:
+	case string:
 		value = v
 	}
 
@@ -157,16 +131,14 @@ parse_array :: proc(name: string, parser: ^Parser) {
 		next(parser) // skip comma
 	}
 
-	values := make([dynamic]ConfigSimpleValue, parser.allocator)
+	values := make([dynamic]Value, parser.allocator)
 
 	loop: for {
 		switch t in next(parser) {
 		case EOF_Token:
 			break loop
-		case String_Token:
+		case Value_Token:
 			append(&values, t.value)
-		case Number_Token:
-			append(&values, to_simple_value(t.value))
 		case SOF_Token,
 		     End_Arr_Token,
 		     Comma_Token,

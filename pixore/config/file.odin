@@ -59,17 +59,17 @@ get_number_value :: proc(values: map[string]ConfigValue, name: string) -> uint {
 	return real_value
 }
 
-get_array_value :: proc(values: map[string]ConfigValue, name: string) -> []ConfigSimpleValue {
+get_array_value :: proc(values: map[string]ConfigValue, name: string) -> []Value {
 	value, exists := values[name]
 	assert(exists, fmt.tprint("Missing value for:", name))
 
-	colors, is_valid := value.([dynamic]ConfigSimpleValue)
+	colors, is_valid := value.([dynamic]Value)
 	assert(is_valid, fmt.tprint("Value for \"", name, "\" is not a number"))
 
 	return colors[:]
 }
 
-get_palette :: proc(colors: []ConfigSimpleValue) -> []rl.Color {
+get_palette :: proc(colors: []Value) -> []rl.Color {
 	palette := make([dynamic]rl.Color)
 
 	for maybe_color in colors {
