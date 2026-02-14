@@ -1,22 +1,19 @@
-package pixore
+package api
 
-import "base"
-import co "config"
+import "../base"
+import co "../config"
 import "core:c"
-import "core:fmt"
 import "core:log"
 import "core:strings"
 import rl "vendor:raylib"
-import gl "vendor:raylib/rlgl"
 
-Pixore :: base.Pixore
 
-create :: proc() -> Pixore {
+create :: proc() -> base.Pixore {
 	log.info("Creating pixore game")
 
 	config := co.get_project_config()
 
-	pixore := Pixore {
+	pixore := base.Pixore {
 		width      = config.width,
 		height     = config.height,
 		title      = config.title,
@@ -28,7 +25,7 @@ create :: proc() -> Pixore {
 	return pixore
 }
 
-save :: proc(p: Pixore) {
+save :: proc(p: base.Pixore) {
 	log.info("Saving game")
 	co.save_project_config(
 		{
@@ -43,7 +40,7 @@ save :: proc(p: Pixore) {
 }
 
 start :: proc(
-	pixore: ^Pixore,
+	pixore: ^base.Pixore,
 	state: ^$State,
 	draw: proc(state: State),
 	update: proc(state: ^State),
@@ -131,43 +128,7 @@ start :: proc(
 	rl.CloseWindow()
 }
 
-push :: proc() {
-	gl.PushMatrix()
-}
-
-pop :: proc() {
-	gl.PopMatrix()
-}
-
-translate :: proc(x: f32 = 0, y: f32 = 0) {
-	gl.Translatef(x, y, 0)
-}
-
-set_offset :: proc(x, y: f32) {
-	p := (^Pixore)(context.user_ptr)
-	p.camera.offset = rl.Vector2{x, y}
-}
-
-delta_time :: proc() -> f32 {
-	return rl.GetFrameTime()
-}
-
 stop :: proc() {
-	p := (^Pixore)(context.user_ptr)
+	p := (^base.Pixore)(context.user_ptr)
 	p.stop_requested = true
-}
-
-// Set a single pixel to a color
-set_pixel :: proc(x, y: int, color: int = -1) {
-	rl.DrawPixel(c.int(x), c.int(y), get_color(color))
-}
-
-// Get the color of a specific pixel
-get_pixel :: proc(x, y: int) -> rl.Color {
-	p := (^Pixore)(context.user_ptr)
-	image := rl.LoadImageFromTexture(p.canvas.texture)
-	defer rl.UnloadImage(image)
-	color := rl.GetImageColor(image, c.int(x), c.int(y))
-
-	return color
 }

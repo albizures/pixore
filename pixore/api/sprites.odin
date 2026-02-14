@@ -1,10 +1,11 @@
-package pixore
+package api
 
+import "../base"
 import "core:log"
 import rl "vendor:raylib"
 
 spr :: proc(x, y, width, height, dest_x, dest_y: int) {
-	p := (^Pixore)(context.user_ptr)
+	p := (^base.Pixore)(context.user_ptr)
 
 	width := f32(width)
 	height := f32(height)

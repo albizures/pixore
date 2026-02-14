@@ -1,4 +1,4 @@
-package pixore
+package api
 
 import "core:c"
 import rl "vendor:raylib"
