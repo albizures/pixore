@@ -48,17 +48,21 @@ start :: proc(
 	draw: proc(state: State),
 	update: proc(state: ^State),
 ) {
-	rl.InitWindow(pixore.width, pixore.height, strings.clone_to_cstring(pixore.title))
+	rl.InitWindow(
+		c.int(pixore.width),
+		c.int(pixore.height),
+		strings.clone_to_cstring(pixore.title),
+	)
 	rl.SetTargetFPS(60)
 
-	res_x := f32(pixore.resolution.x)
-	res_y := f32(pixore.resolution.y)
+	res_x := i32(pixore.resolution.x)
+	res_y := i32(pixore.resolution.y)
 	assert(res_x > 0, "resolution height is zero")
 	assert(res_y > 0, "resolution height is zero")
 
 	pixore.camera.zoom = 1
-	pixore.sprite_texture = rl.LoadRenderTexture(i32(pixore.sprite.size), i32(pixore.sprite.size))
-	pixore.canvas = rl.LoadRenderTexture(i32(res_x), i32(res_y))
+	pixore.sprite_texture = rl.LoadRenderTexture(pixore.sprite.size, pixore.sprite.size)
+	pixore.canvas = rl.LoadRenderTexture(res_x, res_y)
 
 	final_size: f32
 	margin: rl.Vector2
@@ -74,7 +78,6 @@ start :: proc(
 
 		margin = {extra_space / 2, 0}
 	}
-
 
 	context.user_ptr = pixore
 	cols := pixore.sprite.size

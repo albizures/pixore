@@ -58,7 +58,7 @@ write_palette :: proc(builder: ^strings.Builder, palette: []rl.Color) {
 write_sprite :: proc(builder: ^strings.Builder, sprite: base.Sprite) {
 	fmt.sbprint(builder, `sprite="""`, sep = "")
 	for item, index in sprite.data {
-		if uint(index) % sprite.size == 0 {
+		if i32(index) % sprite.size == 0 {
 			fmt.sbprint(builder, "\n", sep = "")
 		}
 

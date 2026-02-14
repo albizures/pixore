@@ -3,13 +3,13 @@ package base
 import rl "vendor:raylib"
 
 Sprite :: struct {
-	size: uint,
+	size: i32,
 	// this array should be a square of: <size> x <size>
 	data: [dynamic]uint,
 }
 
 Config :: struct #all_or_none {
-	width, height: i32,
+	width, height: uint,
 	title:         string,
 	resolution:    rl.Vector2,
 	palette:       []rl.Color,
@@ -18,7 +18,7 @@ Config :: struct #all_or_none {
 
 
 Pixore :: struct {
-	width, height:  i32,
+	width, height:  uint,
 	title:          string,
 	stop_requested: bool,
 	camera:         rl.Camera2D,

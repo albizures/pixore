@@ -30,13 +30,13 @@ get_project_config :: proc() -> base.Config {
 	res_x := get_uint_value(parser.values, "res_x")
 	res_y := get_uint_value(parser.values, "res_y")
 	palette := get_palette(get_array_value(parser.values, "palette"))
-	sprite_size := get_uint_value(parser.values, "sprite_size")
+	sprite_size := get_i32_value(parser.values, "sprite_size")
 	sprite_data := get_sprite(get_string_value(parser.values, "sprite"))
 
 	return base.Config {
 		title = title,
-		width = i32(width),
-		height = i32(height),
+		width = width,
+		height = height,
 		resolution = {f32(res_x), f32(res_y)},
 		palette = palette,
 		sprite = {data = sprite_data, size = sprite_size},
@@ -59,6 +59,15 @@ get_uint_value :: proc(values: map[string]ConfigValue, name: string) -> uint {
 	assert(is_valid, fmt.tprint("Value for \"", name, "\" is not a number"))
 
 	return real_value
+}
+
+get_i32_value :: proc(values: map[string]ConfigValue, name: string) -> i32 {
+	value, exists := values[name]
+	assert(exists, fmt.tprint("Missing value for:", name))
+	real_value, is_valid := value.(uint)
+	assert(is_valid, fmt.tprint("Value for \"", name, "\" is not a number"))
+
+	return i32(real_value)
 }
 
 get_array_value :: proc(values: map[string]ConfigValue, name: string) -> []Value {
@@ -105,7 +114,7 @@ get_sprite :: proc(sprite: string) -> [dynamic]uint {
 
 
 create_project_config :: proc() -> base.Config {
-	sprite_default_size: uint = 16
+	sprite_default_size: i32 = 128
 	// TODO update this proc to ask for the values instead of using defaults
 	config := base.Config {
 		width = 800,
