@@ -1,12 +1,12 @@
-package api
+package pixore
 
-import "../base"
-import co "../config"
+import "base"
+import co "config"
 import "core:c"
 import "core:log"
 import "core:strings"
+import se "editors/sprite"
 import rl "vendor:raylib"
-
 
 create :: proc() -> base.Pixore {
 	log.info("Creating pixore game")
@@ -39,12 +39,9 @@ save :: proc(p: base.Pixore) {
 	)
 }
 
-start :: proc(
-	pixore: ^base.Pixore,
-	state: ^$State,
-	draw: proc(state: State),
-	update: proc(state: ^State),
-) {
+@(private)
+init :: proc(pixore: ^base.Pixore) {
+	rl.SetConfigFlags({.WINDOW_RESIZABLE})
 	rl.InitWindow(
 		c.int(pixore.width),
 		c.int(pixore.height),
@@ -59,24 +56,14 @@ start :: proc(
 
 	pixore.camera.zoom = 1
 	pixore.sprite_texture = rl.LoadRenderTexture(pixore.sprite.size, pixore.sprite.size)
+	rl.SetTextureFilter(pixore.sprite_texture.texture, .POINT)
+
 	pixore.canvas = rl.LoadRenderTexture(res_x, res_y)
-
-	final_size: f32
-	margin: rl.Vector2
-
-	if pixore.width < pixore.height {
-		final_size = f32(pixore.width)
-		extra_space := f32(pixore.height - pixore.width)
-
-		margin = {0, extra_space / 2}
-	} else {
-		final_size = f32(pixore.height)
-		extra_space := f32(pixore.width - pixore.height)
-
-		margin = {extra_space / 2, 0}
-	}
+	rl.SetTextureFilter(pixore.canvas.texture, .POINT)
 
 	context.user_ptr = pixore
+
+	// render the sprite
 	cols := pixore.sprite.size
 	rows := pixore.sprite.size
 	rl.BeginTextureMode(pixore.sprite_texture)
@@ -86,23 +73,37 @@ start :: proc(
 
 		rl.DrawPixel(c.int(x), c.int(y), get_color(int(value)))
 	}
-
 	rl.EndTextureMode()
+
+	se.init(&pixore.sprite_editor)
+}
+
+start :: proc(
+	pixore: ^base.Pixore,
+	state: ^$State,
+	draw: proc(state: State),
+	update: proc(state: ^State),
+) {
+	init(pixore)
+
+	context.user_ptr = pixore
 
 
 	for !pixore.stop_requested {
+		final_size, margin := get_real_size(pixore^)
 		if rl.WindowShouldClose() {
 			pixore.stop_requested = true
 		}
 		update(state)
+		se.update(&pixore.sprite_editor)
 
 		// start drawing canvas
 		rl.BeginTextureMode(pixore.canvas)
 		rl.BeginMode2D(pixore.camera)
 
-
-		/* */rl.DrawFPS(0, 0)
+		// /* */rl.DrawFPS(0, 0)
 		/* */draw(state^)
+		se.draw(pixore.sprite_editor)
 
 		// end drawing canvas
 		rl.EndMode2D()
@@ -114,7 +115,7 @@ start :: proc(
 		rl.DrawTexturePro(
 			pixore.canvas.texture,
 			{0, 0, f32(pixore.canvas.texture.width), f32(-pixore.canvas.texture.height)}, // Source (flip Y because OpenGL)
-			{margin.x, margin.y, f32(final_size), f32(final_size)}, // TODO make it expand to the available space
+			{margin.x, margin.y, final_size, final_size},
 			{0, 0},
 			0,
 			rl.WHITE,
@@ -126,6 +127,25 @@ start :: proc(
 
 	rl.UnloadTexture(pixore.canvas.texture)
 	rl.CloseWindow()
+}
+
+@(private)
+get_real_size :: proc(pixore: base.Pixore) -> (size: f32, margin: rl.Vector2) {
+	win_w := rl.GetScreenWidth()
+	win_h := rl.GetScreenHeight()
+	if win_w < win_h {
+		size = f32(win_w)
+		extra_space := f32(win_h - win_w)
+
+		margin = {0, extra_space / 2}
+	} else {
+		size = f32(win_h)
+		extra_space := f32(win_w - win_h)
+
+		margin = {extra_space / 2, 0}
+	}
+
+	return size, margin
 }
 
 stop :: proc() {

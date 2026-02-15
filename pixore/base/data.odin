@@ -2,6 +2,8 @@ package base
 
 import rl "vendor:raylib"
 
+import se "sprite_editor"
+
 Sprite :: struct {
 	size: i32,
 	// this array should be a square of: <size> x <size>
@@ -16,7 +18,6 @@ Config :: struct #all_or_none {
 	sprite:        Sprite,
 }
 
-
 Pixore :: struct {
 	width, height:  uint,
 	title:          string,
@@ -28,6 +29,7 @@ Pixore :: struct {
 	color:          int,
 	sprite:         Sprite,
 	sprite_texture: rl.RenderTexture2D,
+	sprite_editor:  se.State,
 }
 
 PALETTE_CODES := [?]rune {

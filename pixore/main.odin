@@ -2,11 +2,6 @@ package pixore
 
 import "api"
 
-// game
-create :: api.create
-save :: api.save
-start :: api.start
-stop :: api.stop
 
 // colors
 get_color :: api.get_color

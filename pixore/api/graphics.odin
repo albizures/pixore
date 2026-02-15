@@ -24,3 +24,8 @@ set_offset :: proc(x, y: f32) {
 delta_time :: proc() -> f32 {
 	return rl.GetFrameTime()
 }
+
+win_size :: proc() -> (x: int, y: int) {
+	p := (^base.Pixore)(context.user_ptr)
+	return int(p.resolution.x), int(p.resolution.y)
+}

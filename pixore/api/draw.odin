@@ -11,7 +11,18 @@ circle_fill :: proc(x, y, radius: int, id: int = -1) {
 }
 
 rect :: proc(x, y, w, h: int, id: int = -1) {
-	rl.DrawRectangleLines(c.int(x), c.int(y), c.int(w), c.int(h), get_color(id))
+	x := c.int(x)
+	y := c.int(y)
+	h := c.int(h)
+	w := c.int(w)
+	// manually drawing the rectangle because using raylib DrawRectangleLines
+	// get some pixel off
+	// rl.DrawRectangleLines(x, y, c.int(w), c.int(h), get_color(id))
+	color := get_color(id)
+	rl.DrawLine(x + 0, y + 0, x + w + 1, y + 0, color)
+	rl.DrawLine(x + 0, y + 0, x + 0, y + h, color)
+	rl.DrawLine(x + w, y + 0, x + w, y + h, color)
+	rl.DrawLine(x + 0, y + h, x + w, y + h, color)
 }
 rect_fill :: proc(x, y, w, h: int, id: int = -1) {
 	rl.DrawRectangle(c.int(x), c.int(y), c.int(w), c.int(h), get_color(id))
