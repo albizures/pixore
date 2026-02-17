@@ -19,9 +19,11 @@ rect :: proc(x, y, w, h: int, id: int = -1) {
 	// get some pixel off
 	// rl.DrawRectangleLines(x, y, c.int(w), c.int(h), get_color(id))
 	color := get_color(id)
-	rl.DrawLine(x + 0, y + 0, x + w + 1, y + 0, color)
+	// similar to DrawRectangleLines we need to adjust some pixels
+	// TODO: use DrawRectanglePro with the same values bellow
+	rl.DrawLine(x + 0, y + 1, x + w, y + 1, color)
 	rl.DrawLine(x + 0, y + 0, x + 0, y + h, color)
-	rl.DrawLine(x + w, y + 0, x + w, y + h, color)
+	rl.DrawLine(x + w - 1, y + 0, x + w - 1, y + h, color)
 	rl.DrawLine(x + 0, y + h, x + w, y + h, color)
 }
 rect_fill :: proc(x, y, w, h: int, id: int = -1) {

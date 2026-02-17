@@ -75,7 +75,7 @@ init :: proc(pixore: ^base.Pixore) {
 	}
 	rl.EndTextureMode()
 
-	se.init(&pixore.sprite_editor)
+	se.init(pixore)
 }
 
 start :: proc(
@@ -95,7 +95,7 @@ start :: proc(
 			pixore.stop_requested = true
 		}
 		update(state)
-		se.update(&pixore.sprite_editor)
+		se.update(pixore)
 
 		// start drawing canvas
 		rl.BeginTextureMode(pixore.canvas)
@@ -103,7 +103,7 @@ start :: proc(
 
 		// /* */rl.DrawFPS(0, 0)
 		/* */draw(state^)
-		se.draw(pixore.sprite_editor)
+		se.draw(pixore^)
 
 		// end drawing canvas
 		rl.EndMode2D()
