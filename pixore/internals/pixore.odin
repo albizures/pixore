@@ -1,8 +1,6 @@
-package base
+package pixore_internals
 
 import rl "vendor:raylib"
-
-import se "sprite_editor"
 
 Sprite :: struct {
 	size: i32,
@@ -29,7 +27,8 @@ Pixore :: struct {
 	color:          int,
 	sprite:         Sprite,
 	sprite_texture: rl.RenderTexture2D,
-	sprite_editor:  se.State,
+	spritor:        Spritor,
+	entities:       [dynamic]Entity,
 }
 
 PALETTE_CODES := [?]rune {

@@ -1,19 +1,18 @@
 package pixore
 
-import "base"
 import co "config"
 import "core:c"
 import "core:log"
 import "core:strings"
-import se "editors/sprite"
+import "internals"
 import rl "vendor:raylib"
 
-create :: proc() -> base.Pixore {
+create :: proc() -> internals.Pixore {
 	log.info("Creating pixore game")
 
 	config := co.get_project_config()
 
-	pixore := base.Pixore {
+	pixore := internals.Pixore {
 		width      = config.width,
 		height     = config.height,
 		title      = config.title,
@@ -25,7 +24,7 @@ create :: proc() -> base.Pixore {
 	return pixore
 }
 
-save :: proc(p: base.Pixore) {
+save :: proc(p: internals.Pixore) {
 	log.info("Saving game")
 	co.save_project_config(
 		{
@@ -40,7 +39,7 @@ save :: proc(p: base.Pixore) {
 }
 
 @(private)
-init :: proc(pixore: ^base.Pixore) {
+init :: proc(pixore: ^internals.Pixore) {
 	rl.SetConfigFlags({.WINDOW_RESIZABLE})
 	rl.InitWindow(
 		c.int(pixore.width),
@@ -75,11 +74,11 @@ init :: proc(pixore: ^base.Pixore) {
 	}
 	rl.EndTextureMode()
 
-	se.init(pixore)
+	internals.init_spritor(&pixore.spritor)
 }
 
 start :: proc(
-	pixore: ^base.Pixore,
+	pixore: ^internals.Pixore,
 	state: ^$State,
 	draw: proc(state: State),
 	update: proc(state: ^State),
@@ -88,14 +87,13 @@ start :: proc(
 
 	context.user_ptr = pixore
 
-
 	for !pixore.stop_requested {
 		final_size, margin := get_real_size(pixore^)
 		if rl.WindowShouldClose() {
 			pixore.stop_requested = true
 		}
 		update(state)
-		se.update(pixore)
+		update_entities(pixore)
 
 		// start drawing canvas
 		rl.BeginTextureMode(pixore.canvas)
@@ -103,7 +101,7 @@ start :: proc(
 
 		// /* */rl.DrawFPS(0, 0)
 		/* */draw(state^)
-		se.draw(pixore^)
+		draw_with_traits(pixore.spritor.traits[:])
 
 		// end drawing canvas
 		rl.EndMode2D()
@@ -130,7 +128,7 @@ start :: proc(
 }
 
 @(private)
-get_real_size :: proc(pixore: base.Pixore) -> (size: f32, margin: rl.Vector2) {
+get_real_size :: proc(pixore: internals.Pixore) -> (size: f32, margin: rl.Vector2) {
 	win_w := rl.GetScreenWidth()
 	win_h := rl.GetScreenHeight()
 	if win_w < win_h {
@@ -149,6 +147,6 @@ get_real_size :: proc(pixore: base.Pixore) -> (size: f32, margin: rl.Vector2) {
 }
 
 stop :: proc() {
-	p := (^base.Pixore)(context.user_ptr)
+	p := (^internals.Pixore)(context.user_ptr)
 	p.stop_requested = true
 }

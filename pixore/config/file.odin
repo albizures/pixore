@@ -1,15 +1,14 @@
 package config
 
+import "../internals"
 import "core:c"
-import "core:strings"
-
-import "../base"
 import "core:fmt"
 import "core:log"
 import "core:os"
+import "core:strings"
 import rl "vendor:raylib"
 
-get_project_config :: proc() -> base.Config {
+get_project_config :: proc() -> internals.Config {
 	bytes, ok := os.read_entire_file("config.pixore", context.temp_allocator)
 	// defer delete(bytes) // this gives 'pointer being freed was not allocated', not sure why
 	if !ok {
@@ -33,7 +32,7 @@ get_project_config :: proc() -> base.Config {
 	sprite_size := get_i32_value(parser.values, "sprite_size")
 	sprite_data := get_sprite(get_string_value(parser.values, "sprite"))
 
-	return base.Config {
+	return internals.Config {
 		title = title,
 		width = width,
 		height = height,
@@ -100,7 +99,7 @@ get_sprite :: proc(sprite: string) -> [dynamic]uint {
 
 	values := make([dynamic]uint)
 
-	codes := base.palette_codes_to_map()
+	codes := internals.palette_codes_to_map()
 
 	for r in sprite {
 		value, ok := codes[r]
@@ -113,10 +112,10 @@ get_sprite :: proc(sprite: string) -> [dynamic]uint {
 }
 
 
-create_project_config :: proc() -> base.Config {
+create_project_config :: proc() -> internals.Config {
 	sprite_default_size: i32 = 128
 	// TODO update this proc to ask for the values instead of using defaults
-	config := base.Config {
+	config := internals.Config {
 		width = 800,
 		height = 500,
 		title = "My Odin Game",
@@ -133,7 +132,7 @@ create_project_config :: proc() -> base.Config {
 	return config
 }
 
-save_project_config :: proc(config: base.Config) {
+save_project_config :: proc(config: internals.Config) {
 	str := serialize(config, context.allocator)
 	defer delete(str)
 

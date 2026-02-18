@@ -1,12 +1,12 @@
 package config
 
-import "../base"
+import "../internals"
 import "core:fmt"
 import "core:log"
 import "core:strings"
 import rl "vendor:raylib"
 
-serialize :: proc(config: base.Config, allocator := context.allocator) -> string {
+serialize :: proc(config: internals.Config, allocator := context.allocator) -> string {
 	log.info("Serializing config")
 
 	builder := strings.builder_make()
@@ -55,7 +55,7 @@ write_palette :: proc(builder: ^strings.Builder, palette: []rl.Color) {
 	fmt.sbprintln(builder, "]", sep = "")
 }
 
-write_sprite :: proc(builder: ^strings.Builder, sprite: base.Sprite) {
+write_sprite :: proc(builder: ^strings.Builder, sprite: internals.Sprite) {
 	fmt.sbprint(builder, `sprite="""`, sep = "")
 	for item, index in sprite.data {
 		if i32(index) % sprite.size == 0 {
@@ -63,11 +63,11 @@ write_sprite :: proc(builder: ^strings.Builder, sprite: base.Sprite) {
 		}
 
 		assert(
-			item < len(base.PALETTE_CODES),
+			item < len(internals.PALETTE_CODES),
 			"It seems the palette is too long, increase palette code",
 		)
 
-		fmt.sbprint(builder, base.PALETTE_CODES[item], sep = "")
+		fmt.sbprint(builder, internals.PALETTE_CODES[item], sep = "")
 	}
 
 	fmt.sbprintln(builder, `"""`, sep = "")

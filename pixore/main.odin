@@ -1,28 +1,28 @@
 package pixore
 
-import "api"
+import "internals"
 
 
 // colors
-get_color :: api.get_color
-set_pixel :: api.set_pixel
-get_pixel :: api.get_pixel
+get_color :: internals.get_color
+set_pixel :: internals.set_pixel
+get_pixel :: internals.get_pixel
 
 // graphics
-push :: api.push
-pop :: api.pop
-translate :: api.translate
-set_offset :: api.set_offset
-delta_time :: api.delta_time
+push :: internals.push
+pop :: internals.pop
+translate :: internals.translate
+set_offset :: internals.set_offset
+delta_time :: internals.delta_time
 
 //draw
-circle :: api.circle
-circle_fill :: api.circle_fill
-rect :: api.rect
-rect_fill :: api.rect_fill
-ellipse :: api.ellipse
-ellipse_fill :: api.ellipse_fill
-cls :: api.cls
+circle :: internals.circle
+circle_fill :: internals.circle_fill
+rect :: internals.rect
+rect_fill :: internals.rect_fill
+ellipse :: internals.ellipse
+ellipse_fill :: internals.ellipse_fill
+cls :: internals.cls
 
 // sprites
-spr :: api.spr
+spr :: internals.spr

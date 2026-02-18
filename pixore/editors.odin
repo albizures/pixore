@@ -1,8 +1,8 @@
 package pixore
 
-import "base"
-import "editors/sprite"
+import "internals"
 
-update_editors :: proc(pixore: ^base.Pixore) {
-	sprite.update(pixore)
+
+update_entities :: proc(pixore: ^internals.Pixore) {
+	internals.update_spritor(&pixore.spritor)
 }
