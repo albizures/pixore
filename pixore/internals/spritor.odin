@@ -65,5 +65,9 @@ update_spritor :: proc(spritor: ^Spritor) {
 	}
 }
 
+draw_spritor :: proc(spritor: Spritor) {
+	draw_with_traits(spritor.traits[:])
+}
+
 PALETTE_COLS :: 4
 COLOR_SIZE :: 10

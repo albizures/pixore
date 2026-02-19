@@ -1,6 +1,6 @@
-package pixore
+package pixore_internals
 
-import t "traits"
+import t "../traits"
 import rl "vendor:raylib"
 
 draw_with_traits :: proc(traits: []t.Trait) {

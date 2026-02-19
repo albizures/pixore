@@ -101,7 +101,7 @@ start :: proc(
 
 		// /* */rl.DrawFPS(0, 0)
 		/* */draw(state^)
-		draw_with_traits(pixore.spritor.traits[:])
+		internals.draw_spritor(pixore.spritor)
 
 		// end drawing canvas
 		rl.EndMode2D()
