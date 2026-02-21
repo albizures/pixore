@@ -1,13 +1,12 @@
 package pixore_internals
 
-import "../internals"
 import "core:c"
 import rl "vendor:raylib"
 import gl "vendor:raylib/rlgl"
 
 // Get the color using its id
 get_color :: proc(id: int = -1) -> rl.Color {
-	p := (^internals.Pixore)(context.user_ptr)
+	p := (^Pixore)(context.user_ptr)
 
 	id := id
 
@@ -29,7 +28,7 @@ set_pixel :: proc(x, y: int, color: int = -1) {
 
 // Get the color of a specific pixel
 get_pixel :: proc(x, y: int) -> rl.Color {
-	p := (^internals.Pixore)(context.user_ptr)
+	p := (^Pixore)(context.user_ptr)
 	image := rl.LoadImageFromTexture(p.canvas.texture)
 	defer rl.UnloadImage(image)
 	color := rl.GetImageColor(image, c.int(x), c.int(y))
@@ -91,7 +90,7 @@ translate :: proc(x: f32 = 0, y: f32 = 0) {
 }
 
 set_offset :: proc(x, y: f32) {
-	p := (^internals.Pixore)(context.user_ptr)
+	p := (^Pixore)(context.user_ptr)
 	p.camera.offset = rl.Vector2{x, y}
 }
 
@@ -100,7 +99,7 @@ delta_time :: proc() -> f32 {
 }
 
 win_size :: proc() -> (x: int, y: int) {
-	p := (^internals.Pixore)(context.user_ptr)
+	p := (^Pixore)(context.user_ptr)
 	return int(p.resolution.x), int(p.resolution.y)
 }
 
@@ -114,7 +113,7 @@ is_key_pressed_again :: proc(key: rl.KeyboardKey) -> bool {
 }
 
 spr :: proc(x, y, width, height, dest_x, dest_y: int) {
-	p := (^internals.Pixore)(context.user_ptr)
+	p := (^Pixore)(context.user_ptr)
 
 	width := f32(width)
 	height := f32(height)

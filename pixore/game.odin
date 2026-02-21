@@ -19,6 +19,7 @@ create :: proc() -> internals.Pixore {
 		resolution = config.resolution,
 		palette    = config.palette,
 		sprite     = config.sprite,
+		spritor    = internals.new_spritor(),
 	}
 
 	return pixore
@@ -74,7 +75,7 @@ init :: proc(pixore: ^internals.Pixore) {
 	}
 	rl.EndTextureMode()
 
-	internals.init_spritor(&pixore.spritor)
+
 }
 
 start :: proc(

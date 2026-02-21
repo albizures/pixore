@@ -1,50 +1,111 @@
 package pixore_internals
 
 import "../traits"
+import "core:c"
 import "core:log"
+import "core:mem"
 import rl "vendor:raylib"
 
 Status :: enum {
+	Uninitialized,
 	Closed,
 	Open,
 }
 
+Palette_Grid :: struct {
+	traits: [dynamic]traits.Trait,
+	cols:   u8,
+	colors: [dynamic]Grid_Color,
+}
+
+Grid_Color :: struct {
+	traits: [dynamic]traits.Trait,
+	color:  rl.Color,
+}
+
+Canvas :: struct {
+	traits: [dynamic]traits.Trait,
+	scale:  int,
+}
+
+Spritor_Child :: union #no_nil {
+	Palette_Grid,
+	Canvas,
+}
+
 // spritor is the word sprite and editor together 😉
 Spritor :: struct {
+	arena:            mem.Arena,
+	allocator:        mem.Allocator,
 	status:           Status,
 	last_press_time:  f64,
 	// the time between two interactions to be considered a double click
 	limit_press_rate: f64,
 	traits:           [dynamic]traits.Trait,
+	children:         [10]Spritor_Child,
 }
 
-PADDING :: 2
+PADDING: f32 : 2
 
 init_spritor :: proc(spritor: ^Spritor) {
-	spritor.limit_press_rate = 0.25
-}
+	// maybe it's a good idea to check the size of the palette,
+	// since currently it's the only child that can grow.
+	backing_buffer, err := mem.alloc_bytes(50 * mem.Kilobyte)
+	if err != nil {
+		panic("Unable to allocate memory for the spritior")
+	}
 
-open_spritor :: proc(spritor: ^Spritor) {
-	spritor.status = .Open
-	spritor.traits = make([dynamic]traits.Trait)
+	mem.arena_init(&spritor.arena, backing_buffer)
+	spritor.allocator = mem.arena_allocator(&spritor.arena)
+
+	spritor.traits = make([dynamic]traits.Trait, spritor.allocator)
 
 	win_x, win_y := win_size()
-	log.warn(win_x, win_y, rl.Vector2{f32(win_x), f32(win_y)} - (PADDING * 2))
-	append(&spritor.traits, traits.Pos{value = {PADDING, PADDING}})
+	PADDING_TWO := PADDING * 2
+
+	// spritor traits
 	append(
 		&spritor.traits,
-		traits.Size{value = rl.Vector2{f32(win_x), f32(win_y)} - (PADDING * 2)},
+		traits.Rec{value = {PADDING, PADDING, f32(win_x) - PADDING_TWO, f32(win_y) - PADDING_TWO}},
 	)
 	append(&spritor.traits, traits.Background{color = rl.BEIGE})
 	append(
 		&spritor.traits,
 		traits.Border{color = rl.BLACK, width = 1, kind = .Outside, direction = .Full},
 	)
+
+	// spritor chidren
+	spritor.children[0] = new_canvas(spritor^)
+	spritor.children[1] = new_palette_grid(spritor^)
+
 }
 
+new_spritor :: proc() -> Spritor {
+	return Spritor{limit_press_rate = 0.25}
+}
+
+open_spritor :: proc(spritor: ^Spritor) {
+	if spritor.status == .Uninitialized {
+		init_spritor(spritor)
+	}
+
+	spritor.status = .Open
+}
+
+// Still need to find where to use this 😅
 close_spritor :: proc(spritor: ^Spritor) {
 	spritor.status = .Closed
-	free(&spritor.traits)
+
+	used_space := spritor.arena.offset
+	remaining := len(spritor.arena.data) - spritor.arena.offset
+	log.warn("Used space: %d, Remaining space: %d", used_space, remaining)
+
+}
+
+uninit_spritor :: proc(spritor: ^Spritor) {
+	spritor.status = .Uninitialized
+
+	mem.arena_free_all(&spritor.arena)
 }
 
 update_spritor :: proc(spritor: ^Spritor) {
@@ -52,7 +113,7 @@ update_spritor :: proc(spritor: ^Spritor) {
 		current_time := rl.GetTime()
 
 		if current_time - spritor.last_press_time < spritor.limit_press_rate {
-			if spritor.status == .Closed {
+			if spritor.status != .Open {
 				open_spritor(spritor)
 			} else {
 				close_spritor(spritor)
@@ -63,11 +124,112 @@ update_spritor :: proc(spritor: ^Spritor) {
 			spritor.last_press_time = current_time
 		}
 	}
+
+	if spritor.status == .Open {
+		rec := traits.expect_trait(spritor.traits[:], traits.Rec, "Spritor is missng a rec").value
+
+		if rl.CheckCollisionPointRec(rl.GetMousePosition(), rec) {
+			//
+		}
+	}
 }
 
 draw_spritor :: proc(spritor: Spritor) {
+	if spritor.status != .Open {
+		return
+	}
 	draw_with_traits(spritor.traits[:])
+	for child in spritor.children {
+		if traits, ok := get_child_traits(child).?; ok {
+			draw_with_traits(traits, spritor.traits[:])
+		}
+
+		if grid, ok := child.(Palette_Grid); ok {
+			draw_palette_grid(grid)
+		}
+	}
+}
+
+draw_palette_grid :: proc(grid: Palette_Grid) {
+	for color, index in grid.colors {
+		x := f32(index % int(grid.cols) * COLOR_SIZE)
+		y := f32(index / int(grid.cols) * COLOR_SIZE)
+		rec := traits.expect_trait_ptr(
+			color.traits[:],
+			traits.Rec,
+			"Palette Grid is missing a rec",
+		)
+
+		rec.value.x = x
+		rec.value.y = y
+		draw_with_traits(color.traits[:], grid.traits[:])
+	}
+}
+
+get_child_traits :: proc(child: Spritor_Child) -> Maybe([]traits.Trait) {
+	switch c in child {
+	case Palette_Grid:
+		return c.traits[:]
+	case Canvas:
+		return c.traits[:]
+	}
+
+	return nil
+}
+
+
+new_canvas :: proc(spritor: Spritor) -> Canvas {
+	canvas := Canvas {
+		traits = make([dynamic]traits.Trait, spritor.allocator),
+		scale  = 1,
+	}
+
+	append(&canvas.traits, traits.Rec{value = {x = 2, y = 2, width = 64, height = 64}})
+	append(&canvas.traits, traits.Position.Relative)
+	append(&canvas.traits, traits.Parent{traits = spritor.traits[:]})
+
+	append(&canvas.traits, traits.Background{color = rl.BROWN})
+
+	return canvas
 }
 
 PALETTE_COLS :: 4
-COLOR_SIZE :: 10
+COLOR_SIZE :: 12
+
+new_palette_grid :: proc(spritor: Spritor) -> Palette_Grid {
+	p := (^Pixore)(context.user_ptr)
+	grid := Palette_Grid {
+		traits = make([dynamic]traits.Trait, spritor.allocator),
+		cols   = PALETTE_COLS,
+		colors = make([dynamic]Grid_Color),
+	}
+
+	size: f32 = PALETTE_COLS * COLOR_SIZE
+
+	append(&grid.traits, traits.Rec{value = {x = 70, y = 2, width = size, height = size}})
+	append(&grid.traits, traits.Position.Relative)
+	append(&grid.traits, traits.Parent{traits = spritor.traits[:]})
+
+	append(&grid.traits, traits.Background{color = rl.BROWN})
+
+
+	for color in p.palette {
+		new_color := Grid_Color {
+			traits = make([dynamic]traits.Trait, spritor.allocator),
+			color  = color,
+		}
+
+		append(
+			&new_color.traits,
+			traits.Rec{value = {x = 0, y = 0, width = COLOR_SIZE, height = COLOR_SIZE}},
+		)
+		append(&new_color.traits, traits.Background{color = color})
+		append(&new_color.traits, traits.Position.Relative)
+		append(&new_color.traits, traits.Parent{traits = grid.traits[:]})
+
+		append(&grid.colors, new_color)
+
+	}
+
+	return grid
+}

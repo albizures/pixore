@@ -28,7 +28,7 @@ Pixore :: struct {
 	sprite:         Sprite,
 	sprite_texture: rl.RenderTexture2D,
 	spritor:        Spritor,
-	entities:       [dynamic]Entity,
+	// entities:       [dynamic]Entity,
 }
 
 PALETTE_CODES := [?]rune {

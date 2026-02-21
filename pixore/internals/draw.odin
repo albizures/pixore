@@ -1,55 +1,89 @@
 package pixore_internals
 
 import t "../traits"
+import "core:fmt"
+import "core:log"
 import rl "vendor:raylib"
 
-draw_with_traits :: proc(traits: []t.Trait) {
+draw_with_traits :: proc(traits: []t.Trait, parent_traits: Maybe([]t.Trait) = nil) {
 	for trait in traits {
 		#partial switch v in trait {
 		case t.Border:
-			pos := t.expect_trait(traits, t.Pos, "Border trait expects position")
-			size := t.expect_trait(traits, t.Size, "Border trait expects size")
-			anchor := t.find_trait(traits, t.Anchor)
-			draw_border(v, pos, size, anchor)
+			draw_border(v, traits)
 		case t.Background:
-			pos := t.expect_trait(traits, t.Pos, "Border trait expects position")
-			size := t.expect_trait(traits, t.Size, "Border trait expects size")
-			anchor := t.find_trait(traits, t.Anchor)
-			draw_background(v, pos, size, anchor)
-		case t.Margin, t.Padding, t.Pos, t.Size:
+			draw_background(v, traits)
+		case t.Margin, t.Padding, t.Pos, t.Size, t.Rec, t.Parent, t.Position:
 		// ignore they don't do anything by themselves
 		case:
-			panic("Trait not implemented")
+			panic(fmt.tprintln("Trait not implemented:", trait))
 		}
 	}
 }
 
-draw_border :: proc(border: t.Border, pos: t.Pos, size: t.Size, anchor: Maybe(t.Anchor)) {
-	start: rl.Vector2 = pos.value
-	size: rl.Vector2 = size.value
-	width := f32(border.width)
+draw_border :: proc(border: t.Border, traits: []t.Trait) {
+	rec_trait := t.expect_trait(traits, t.Rec, "Border trait expects rec")
+	anchor := t.get_anchor(traits)
 
+	parent_offset := get_parent_offset(traits)
+
+	width := f32(border.width)
+	rec := rec_trait.value
 	if border.kind == .Outside {
-		start -= width
-		size += width * 2
+		rec.x += parent_offset.x - width
+		rec.y += parent_offset.y - width
+		rec.width += width * 2
+		rec.height += width * 2
 	}
 
-	value, ok := anchor.?
-	anchor := value.value if ok else {0, 0}
-
 	rl.DrawRectangleLinesEx(
-		{start.x + anchor.x, start.y + anchor.y, size.x, size.y},
+		{rec.x - anchor.x, rec.y - anchor.y, rec.width, rec.height},
 		width,
 		border.color,
 	)
 }
 
+draw_background :: proc(border: t.Background, traits: []t.Trait) {
+	rec_trait := t.expect_trait(traits, t.Rec, "Background trait expects rec")
+	anchor := t.get_anchor(traits)
 
-draw_background :: proc(border: t.Background, pos: t.Pos, size: t.Size, anchor: Maybe(t.Anchor)) {
-	start: rl.Vector2 = pos.value
-	size: rl.Vector2 = size.value
-	value, ok := anchor.?
-	anchor := value.value if ok else {0, 0}
+	parent_offset := get_parent_offset(traits)
 
-	rl.DrawRectanglePro({start.x, start.y, size.x, size.y}, anchor, 0, border.color)
+	rec := rec_trait.value
+
+	rl.DrawRectanglePro(
+		{rec.x + parent_offset.x, rec.y + parent_offset.y, rec.width, rec.height},
+		anchor,
+		0,
+		border.color,
+	)
+}
+
+get_parent_offset :: proc(traits: []t.Trait) -> rl.Vector2 {
+	maybe_parent := t.find_trait(traits, t.Parent)
+	position_trait := t.find_trait(traits, t.Position)
+
+	position, has_position := position_trait.?
+	if !has_position || position == .Absolute {
+		return rl.Vector2{0, 0}
+	}
+
+	parent_traits, has_parent := maybe_parent.?
+	if !has_parent {
+		if position == .Relative {
+			panic("Child with relative position but without parent")
+		}
+
+		return rl.Vector2{0, 0}
+	}
+
+
+	rec_trait := t.expect_trait(
+		parent_traits.traits,
+		t.Rec,
+		"Parent with relative child needs to have a rec",
+	)
+
+	rec := rec_trait.value
+
+	return {rec.x, rec.y} + get_parent_offset(parent_traits.traits)
 }
