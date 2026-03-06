@@ -228,6 +228,31 @@ con_string :: proc(t: ^Tokenizer) -> string {
 	}
 
 	return string(t.data[start:end])
+
+
+	scan_escape :: proc(t: ^Tokenizer) -> bool {
+		switch t.current {
+		case '"', '\'', '\\', '/', 'b', 'n', 'r', 't', 'f':
+			consume_rune(t)
+			return true
+		case 'u':
+			// Expect 4 hexadecimal digits
+			for i := 0; i < 4; i += 1 {
+				r := consume_rune(t)
+				switch r {
+				case '0' ..= '9', 'a' ..= 'f', 'A' ..= 'F':
+				// Okay
+				case:
+					return false
+				}
+			}
+			return true
+		case:
+			// Ignore the next rune regardless
+			consume_rune(t)
+		}
+		return false
+	}
 }
 
 con_number :: proc(t: ^Tokenizer) -> string {
@@ -282,29 +307,4 @@ con_multiline_string :: proc(t: ^Tokenizer) -> string {
 	}
 
 	return t.data[start:]
-}
-
-
-scan_escape :: proc(t: ^Tokenizer) -> bool {
-	switch t.current {
-	case '"', '\'', '\\', '/', 'b', 'n', 'r', 't', 'f':
-		consume_rune(t)
-		return true
-	case 'u':
-		// Expect 4 hexadecimal digits
-		for i := 0; i < 4; i += 1 {
-			r := consume_rune(t)
-			switch r {
-			case '0' ..= '9', 'a' ..= 'f', 'A' ..= 'F':
-			// Okay
-			case:
-				return false
-			}
-		}
-		return true
-	case:
-		// Ignore the next rune regardless
-		consume_rune(t)
-	}
-	return false
 }
