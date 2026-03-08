@@ -9,9 +9,9 @@ import "core:strings"
 import rl "vendor:raylib"
 
 get_project_config :: proc() -> internals.Config {
-	bytes, ok := os.read_entire_file("config.pixore", context.temp_allocator)
+	bytes, file_error := os.read_entire_file("config.pixore", context.temp_allocator)
 	// defer delete(bytes) // this gives 'pointer being freed was not allocated', not sure why
-	if !ok {
+	if file_error != nil {
 		log.info("Config not found, creating a new one")
 		return create_project_config()
 	}
@@ -140,7 +140,11 @@ save_project_config :: proc(config: internals.Config) {
 
 	log.info("Saving file")
 	// TODO: handle errors
-	os.write_entire_file("config.pixore", data_as_bytes)
+	error := os.write_entire_file("config.pixore", data_as_bytes)
+
+	if error != nil {
+		log.error("Failed to save config: %v", error)
+	}
 }
 
 
