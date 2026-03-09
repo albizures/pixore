@@ -1,5 +1,6 @@
 package pixore_internals
 
+import "../helpers"
 import "../traits"
 import "core:c"
 import "core:log"
@@ -33,7 +34,7 @@ Spritor_Child :: union #no_nil {
 	Canvas,
 }
 
-// spritor is the word sprite and editor together 😉
+// spritor is the union of sprite and editor together 😉
 Spritor :: struct {
 	arena:            mem.Arena,
 	allocator:        mem.Allocator,
@@ -92,7 +93,6 @@ open_spritor :: proc(spritor: ^Spritor) {
 	spritor.status = .Open
 }
 
-// Still need to find where to use this 😅
 close_spritor :: proc(spritor: ^Spritor) {
 	spritor.status = .Closed
 
@@ -147,21 +147,45 @@ draw_spritor :: proc(spritor: Spritor) {
 		if grid, ok := child.(Palette_Grid); ok {
 			draw_palette_grid(grid)
 		}
+
+		if canvas, ok := child.(Canvas); ok {
+			draw_canvas(canvas)
+		}
+	}
+}
+
+draw_canvas :: proc(canvas: Canvas) {
+	p := (^Pixore)(context.user_ptr)
+
+	parent_offset := get_parent_offset(canvas.traits[:])
+	rec := traits.expect_trait_ptr(canvas.traits[:], traits.Rec, "Canvas is missing a rec")
+
+	for color_index, index in p.sprite.data {
+		color := get_color(int(color_index))
+
+		x, y := helpers.get_grid_cell(index, int(p.sprite.size))
+
+		rl.DrawRectangle(
+			c.int(f32(x * canvas.scale) + parent_offset.x + rec.value.x),
+			c.int(f32(y * canvas.scale) + parent_offset.y + rec.value.y),
+			c.int(canvas.scale),
+			c.int(canvas.scale),
+			color,
+		)
 	}
 }
 
 draw_palette_grid :: proc(grid: Palette_Grid) {
 	for color, index in grid.colors {
-		x := f32(index % int(grid.cols) * COLOR_SIZE)
-		y := f32(index / int(grid.cols) * COLOR_SIZE)
+		x, y := helpers.get_grid_cell(index, int(grid.cols))
 		rec := traits.expect_trait_ptr(
 			color.traits[:],
 			traits.Rec,
 			"Palette Grid is missing a rec",
 		)
 
-		rec.value.x = x
-		rec.value.y = y
+		rec.value.x = f32(x * COLOR_SIZE)
+		rec.value.y = f32(y * COLOR_SIZE)
 		draw_with_traits(color.traits[:], grid.traits[:])
 	}
 }
@@ -177,11 +201,10 @@ get_child_traits :: proc(child: Spritor_Child) -> Maybe([]traits.Trait) {
 	return nil
 }
 
-
 new_canvas :: proc(spritor: Spritor) -> Canvas {
 	canvas := Canvas {
 		traits = make([dynamic]traits.Trait, spritor.allocator),
-		scale  = 1,
+		scale  = 4,
 	}
 
 	append(&canvas.traits, traits.Rec{value = {x = 2, y = 2, width = 64, height = 64}})

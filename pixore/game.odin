@@ -4,6 +4,7 @@ import co "config"
 import "core:c"
 import "core:log"
 import "core:strings"
+import "helpers"
 import "internals"
 import rl "vendor:raylib"
 
@@ -68,8 +69,7 @@ init :: proc(pixore: ^internals.Pixore) {
 	rows := pixore.sprite.size
 	rl.BeginTextureMode(pixore.sprite_texture)
 	for value, index in pixore.sprite.data {
-		x := index % int(cols)
-		y := index / int(rows)
+		x, y := helpers.get_grid_cell(index, int(cols))
 
 		rl.DrawPixel(c.int(x), c.int(y), get_color(int(value)))
 	}
