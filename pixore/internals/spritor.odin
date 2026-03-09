@@ -131,8 +131,9 @@ update_spritor :: proc(spritor: ^Spritor) {
 	if spritor.status == .Open {
 		rect := traits.expect_trait(spritor.traits[:], traits.Rect, "Spritor is missng a rect")
 
-		if rl.CheckCollisionPointRec(rl.GetMousePosition(), rect) {
-			//
+		if is_mouse_pressed(.LEFT) && rl.CheckCollisionPointRec(get_mouse_position(), rect) {
+
+			log.warn("clicking!!", rect, get_mouse_position(), rl.GetMousePosition())
 		}
 	}
 }

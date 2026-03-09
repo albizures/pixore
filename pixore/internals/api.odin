@@ -1,6 +1,7 @@
 package pixore_internals
 
 import "core:c"
+import "core:math"
 import rl "vendor:raylib"
 import gl "vendor:raylib/rlgl"
 
@@ -112,6 +113,10 @@ is_key_pressed_again :: proc(key: rl.KeyboardKey) -> bool {
 	return rl.IsKeyPressedRepeat(key)
 }
 
+is_mouse_pressed :: proc(button: rl.MouseButton) -> bool {
+	return rl.IsMouseButtonPressed(button)
+}
+
 spr :: proc(x, y, width, height, dest_x, dest_y: int) {
 	p := (^Pixore)(context.user_ptr)
 
@@ -130,4 +135,21 @@ spr :: proc(x, y, width, height, dest_x, dest_y: int) {
 		0,
 		rl.WHITE,
 	)
+}
+
+get_mouse_position :: proc() -> rl.Vector2 {
+	p := (^Pixore)(context.user_ptr)
+
+	size, margin := get_real_size(p^)
+
+	pos := rl.GetMousePosition() - margin
+
+	// we need to snap to pixel grid because we are drawing to a texture
+	// but we get the get_mouse_position
+	pos = pos * (p.resolution / size)
+	// clamp to canvas size
+	pos.x = math.floor(pos.x)
+	pos.y = math.floor(pos.y)
+
+	return pos
 }

@@ -73,8 +73,6 @@ init :: proc(pixore: ^internals.Pixore) {
 		rl.DrawPixelV({f32(x), f32(y)}, get_color(int(value)))
 	}
 	rl.EndTextureMode()
-
-
 }
 
 start :: proc(
@@ -88,7 +86,7 @@ start :: proc(
 	context.user_ptr = pixore
 
 	for !pixore.stop_requested {
-		final_size, margin := get_real_size(pixore^)
+		final_size, margin := internals.get_real_size(pixore^)
 		if rl.WindowShouldClose() {
 			pixore.stop_requested = true
 		}
@@ -125,25 +123,6 @@ start :: proc(
 
 	rl.UnloadTexture(pixore.canvas.texture)
 	rl.CloseWindow()
-}
-
-@(private)
-get_real_size :: proc(pixore: internals.Pixore) -> (size: f32, margin: rl.Vector2) {
-	win_w := rl.GetScreenWidth()
-	win_h := rl.GetScreenHeight()
-	if win_w < win_h {
-		size = f32(win_w)
-		extra_space := f32(win_h - win_w)
-
-		margin = {0, extra_space / 2}
-	} else {
-		size = f32(win_h)
-		extra_space := f32(win_w - win_h)
-
-		margin = {extra_space / 2, 0}
-	}
-
-	return size, margin
 }
 
 stop :: proc() {

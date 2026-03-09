@@ -28,7 +28,6 @@ Pixore :: struct {
 	sprite:         Sprite,
 	sprite_texture: rl.RenderTexture2D,
 	spritor:        Spritor,
-	// entities:       [dynamic]Entity,
 }
 
 PALETTE_CODES := [?]rune {
@@ -64,4 +63,23 @@ palette_codes_to_map :: proc(allocator := context.allocator) -> map[rune]uint {
 	}
 
 	return codes
+}
+
+
+get_real_size :: proc(pixore: Pixore) -> (size: f32, margin: rl.Vector2) {
+	win_w := rl.GetScreenWidth()
+	win_h := rl.GetScreenHeight()
+	if win_w < win_h {
+		size = f32(win_w)
+		extra_space := f32(win_h - win_w)
+
+		margin = {0, extra_space / 2}
+	} else {
+		size = f32(win_h)
+		extra_space := f32(win_w - win_h)
+
+		margin = {extra_space / 2, 0}
+	}
+
+	return size, margin
 }
