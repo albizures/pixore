@@ -13,9 +13,10 @@ Status :: enum {
 }
 
 Palette_Grid :: struct {
-	traits: [dynamic]traits.Trait,
-	cols:   u8,
-	colors: [dynamic]Grid_Color,
+	traits:      [dynamic]traits.Trait,
+	cols:        u8,
+	colors:      [dynamic]Grid_Color,
+	color_index: int,
 }
 
 Grid_Color :: struct {
@@ -31,7 +32,7 @@ Canvas :: struct {
 	offset: rl.Vector2,
 }
 
-Spritor_Child :: union #no_nil {
+Spritor_Child :: union {
 	Palette_Grid,
 	Canvas,
 }
@@ -143,7 +144,7 @@ draw_spritor :: proc(spritor: Spritor) {
 	draw_with_traits(spritor.traits[:])
 	for child in spritor.children {
 		if traits, ok := get_child_traits(child).?; ok {
-			draw_with_traits(traits, spritor.traits[:])
+			draw_with_traits(traits)
 		}
 
 		if grid, ok := child.(Palette_Grid); ok {
@@ -186,6 +187,14 @@ draw_canvas :: proc(canvas: Canvas) {
 }
 
 draw_palette_grid :: proc(grid: Palette_Grid) {
+	active_color_traits := [?]traits.Trait {
+		rl.Rectangle{},
+		traits.Position.Relative,
+		traits.Parent{traits = grid.traits[:]},
+		traits.Border{kind = traits.Border_Kind.Inside, width = 1, color = rl.BLACK},
+		traits.Border{kind = traits.Border_Kind.Outside, width = 1, color = rl.WHITE},
+	}
+
 	for color, index in grid.colors {
 		x, y := helpers.get_grid_cell(index, int(grid.cols))
 		rect := traits.expect_trait_ptr(
@@ -196,8 +205,17 @@ draw_palette_grid :: proc(grid: Palette_Grid) {
 
 		rect.x = f32(x * COLOR_SIZE)
 		rect.y = f32(y * COLOR_SIZE)
-		draw_with_traits(color.traits[:], grid.traits[:])
+		draw_with_traits(color.traits[:])
+
+		if grid.color_index == index {
+			// just changing the position
+			active_color_traits[0] = traits.Rect(rect^)
+
+		}
 	}
+
+	// drawing until the end of the loop so it's drawn on top of everything else
+	draw_with_traits(active_color_traits[:])
 }
 
 get_child_traits :: proc(child: Spritor_Child) -> Maybe([]traits.Trait) {
@@ -234,9 +252,10 @@ COLOR_SIZE :: 12
 new_palette_grid :: proc(spritor: Spritor) -> Palette_Grid {
 	p := (^Pixore)(context.user_ptr)
 	grid := Palette_Grid {
-		traits = make([dynamic]traits.Trait, spritor.allocator),
-		cols   = PALETTE_COLS,
-		colors = make([dynamic]Grid_Color),
+		traits      = make([dynamic]traits.Trait, spritor.allocator),
+		cols        = PALETTE_COLS,
+		colors      = make([dynamic]Grid_Color),
+		color_index = 3,
 	}
 
 	size: f32 = PALETTE_COLS * COLOR_SIZE

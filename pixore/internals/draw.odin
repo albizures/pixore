@@ -1,11 +1,12 @@
 package pixore_internals
 
+import "../helpers"
 import t "../traits"
 import "core:fmt"
 import "core:log"
 import rl "vendor:raylib"
 
-draw_with_traits :: proc(traits: []t.Trait, parent_traits: Maybe([]t.Trait) = nil) {
+draw_with_traits :: proc(traits: []t.Trait) {
 	for trait in traits {
 		#partial switch v in trait {
 		case t.Border:
@@ -27,10 +28,10 @@ draw_border :: proc(border: t.Border, traits: []t.Trait) {
 	parent_offset := get_parent_offset(traits)
 
 	width := f32(border.width)
-
+	helpers.add_vec_to_rect(parent_offset, &rect)
 	if border.kind == .Outside {
-		rect.x += parent_offset.x - width
-		rect.y += parent_offset.y - width
+		rect.x -= width
+		rect.y -= width
 		rect.width += width * 2
 		rect.height += width * 2
 	}
@@ -47,7 +48,6 @@ draw_background :: proc(border: t.Background, traits: []t.Trait) {
 	anchor := t.get_anchor(traits)
 
 	parent_offset := get_parent_offset(traits)
-
 
 	rl.DrawRectanglePro(
 		{rect.x + parent_offset.x, rect.y + parent_offset.y, rect.width, rect.height},
@@ -81,7 +81,6 @@ get_parent_offset :: proc(traits: []t.Trait) -> rl.Vector2 {
 		t.Rect,
 		"Parent with relative child needs to have a rect",
 	)
-
 
 	return {rect.x, rect.y} + get_parent_offset(parent_traits.traits)
 }
