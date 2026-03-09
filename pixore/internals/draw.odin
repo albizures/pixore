@@ -21,13 +21,13 @@ draw_with_traits :: proc(traits: []t.Trait, parent_traits: Maybe([]t.Trait) = ni
 }
 
 draw_border :: proc(border: t.Border, traits: []t.Trait) {
-	rect_trait := t.expect_trait(traits, t.Rect, "Border trait expects rect")
+	rect := t.expect_trait(traits, t.Rect, "Border trait expects rect")
 	anchor := t.get_anchor(traits)
 
 	parent_offset := get_parent_offset(traits)
 
 	width := f32(border.width)
-	rect := rect_trait.value
+
 	if border.kind == .Outside {
 		rect.x += parent_offset.x - width
 		rect.y += parent_offset.y - width
@@ -43,12 +43,11 @@ draw_border :: proc(border: t.Border, traits: []t.Trait) {
 }
 
 draw_background :: proc(border: t.Background, traits: []t.Trait) {
-	rect_trait := t.expect_trait(traits, t.Rect, "Background trait expects rect")
+	rect := t.expect_trait(traits, t.Rect, "Background trait expects rect")
 	anchor := t.get_anchor(traits)
 
 	parent_offset := get_parent_offset(traits)
 
-	rect := rect_trait.value
 
 	rl.DrawRectanglePro(
 		{rect.x + parent_offset.x, rect.y + parent_offset.y, rect.width, rect.height},
@@ -77,13 +76,12 @@ get_parent_offset :: proc(traits: []t.Trait) -> rl.Vector2 {
 	}
 
 
-	rec_trait := t.expect_trait(
+	rect := t.expect_trait(
 		parent_traits.traits,
 		t.Rect,
 		"Parent with relative child needs to have a rect",
 	)
 
-	rect := rec_trait.value
 
 	return {rect.x, rect.y} + get_parent_offset(parent_traits.traits)
 }

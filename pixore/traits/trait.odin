@@ -16,9 +16,7 @@ Trait :: union #no_nil {
 	Parent,
 }
 
-Rect :: struct {
-	value: rl.Rectangle,
-}
+Rect :: rl.Rectangle
 
 Parent :: struct {
 	traits: []Trait,
@@ -29,17 +27,11 @@ Position :: enum {
 	Absolute,
 }
 
-Pos :: struct {
-	value: rl.Vector2,
-}
+Pos :: distinct rl.Vector2
 
-Size :: struct {
-	value: rl.Vector2,
-}
+Size :: distinct rl.Vector2
 
-Anchor :: struct {
-	value: rl.Vector2,
-}
+Anchor :: distinct rl.Vector2
 
 
 find_trait :: proc(traits: []Trait, $Type: typeid) -> Maybe(Type) {
@@ -87,8 +79,7 @@ expect_trait_ptr :: proc(
 get_anchor :: proc(traits: []Trait) -> rl.Vector2 {
 	anchor_trait := find_trait(traits, Anchor)
 
-	value, ok := anchor_trait.?
-	anchor := value.value if ok else {0, 0}
+	anchor, ok := anchor_trait.?
 
-	return anchor
+	return rl.Vector2(anchor)
 }
