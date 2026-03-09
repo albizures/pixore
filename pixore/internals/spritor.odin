@@ -26,7 +26,10 @@ Grid_Color :: struct {
 
 Canvas :: struct {
 	traits: [dynamic]traits.Trait,
+	// the scale of the sprite
 	scale:  int,
+	// the offset of the canvas from the top-left corner of the window
+	offset: rl.Vector2,
 }
 
 Spritor_Child :: union #no_nil {
@@ -157,21 +160,29 @@ draw_spritor :: proc(spritor: Spritor) {
 draw_canvas :: proc(canvas: Canvas) {
 	p := (^Pixore)(context.user_ptr)
 
-	parent_offset := get_parent_offset(canvas.traits[:])
+	offset := get_parent_offset(canvas.traits[:])
 	rec := traits.expect_trait_ptr(canvas.traits[:], traits.Rec, "Canvas is missing a rec")
+	helpers.add_rect_to_vec(rec.value, &offset)
 
-	for color_index, index in p.sprite.data {
+	pixel := rl.Rectangle {
+		width  = f32(canvas.scale),
+		height = f32(canvas.scale),
+	}
+
+	size := f32(p.sprite.size) / f32(canvas.scale)
+	limit: rl.Vector2 = canvas.offset + f32(canvas.scale)
+	start := int(helpers.get_grid_index(canvas.offset.x, canvas.offset.y, size))
+	end := int(helpers.get_grid_index(limit.x, limit.y, size))
+
+	for color_index, index in p.sprite.data[start:end] {
 		color := get_color(int(color_index))
 
 		x, y := helpers.get_grid_cell(index, int(p.sprite.size))
 
-		rl.DrawRectangle(
-			c.int(f32(x * canvas.scale) + parent_offset.x + rec.value.x),
-			c.int(f32(y * canvas.scale) + parent_offset.y + rec.value.y),
-			c.int(canvas.scale),
-			c.int(canvas.scale),
-			color,
-		)
+		pixel.x = f32(x * canvas.scale) + offset.x
+		pixel.y = f32(y * canvas.scale) + offset.y
+
+		rl.DrawRectangleRec(pixel, color)
 	}
 }
 
@@ -204,11 +215,13 @@ get_child_traits :: proc(child: Spritor_Child) -> Maybe([]traits.Trait) {
 new_canvas :: proc(spritor: Spritor) -> Canvas {
 	canvas := Canvas {
 		traits = make([dynamic]traits.Trait, spritor.allocator),
-		scale  = 4,
+		scale  = 8,
+		offset = {0, 0},
 	}
 
 	append(&canvas.traits, traits.Rec{value = {x = 2, y = 2, width = 64, height = 64}})
 	append(&canvas.traits, traits.Position.Relative)
+	append(&canvas.traits, traits.Border{color = rl.BLACK, direction = .Full, width = 1})
 	append(&canvas.traits, traits.Parent{traits = spritor.traits[:]})
 
 	append(&canvas.traits, traits.Background{color = rl.BROWN})
@@ -231,6 +244,7 @@ new_palette_grid :: proc(spritor: Spritor) -> Palette_Grid {
 
 	append(&grid.traits, traits.Rec{value = {x = 70, y = 2, width = size, height = size}})
 	append(&grid.traits, traits.Position.Relative)
+	append(&grid.traits, traits.Border{color = rl.BLACK, direction = .Full, width = 1})
 	append(&grid.traits, traits.Parent{traits = spritor.traits[:]})
 
 	append(&grid.traits, traits.Background{color = rl.BROWN})
