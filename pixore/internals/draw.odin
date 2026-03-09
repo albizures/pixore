@@ -12,7 +12,7 @@ draw_with_traits :: proc(traits: []t.Trait, parent_traits: Maybe([]t.Trait) = ni
 			draw_border(v, traits)
 		case t.Background:
 			draw_background(v, traits)
-		case t.Margin, t.Padding, t.Pos, t.Size, t.Rec, t.Parent, t.Position:
+		case t.Margin, t.Padding, t.Pos, t.Size, t.Rect, t.Parent, t.Position:
 		// ignore they don't do anything by themselves
 		case:
 			panic(fmt.tprintln("Trait not implemented:", trait))
@@ -21,37 +21,37 @@ draw_with_traits :: proc(traits: []t.Trait, parent_traits: Maybe([]t.Trait) = ni
 }
 
 draw_border :: proc(border: t.Border, traits: []t.Trait) {
-	rec_trait := t.expect_trait(traits, t.Rec, "Border trait expects rec")
+	rect_trait := t.expect_trait(traits, t.Rect, "Border trait expects rect")
 	anchor := t.get_anchor(traits)
 
 	parent_offset := get_parent_offset(traits)
 
 	width := f32(border.width)
-	rec := rec_trait.value
+	rect := rect_trait.value
 	if border.kind == .Outside {
-		rec.x += parent_offset.x - width
-		rec.y += parent_offset.y - width
-		rec.width += width * 2
-		rec.height += width * 2
+		rect.x += parent_offset.x - width
+		rect.y += parent_offset.y - width
+		rect.width += width * 2
+		rect.height += width * 2
 	}
 
 	rl.DrawRectangleLinesEx(
-		{rec.x - anchor.x, rec.y - anchor.y, rec.width, rec.height},
+		{rect.x - anchor.x, rect.y - anchor.y, rect.width, rect.height},
 		width,
 		border.color,
 	)
 }
 
 draw_background :: proc(border: t.Background, traits: []t.Trait) {
-	rec_trait := t.expect_trait(traits, t.Rec, "Background trait expects rec")
+	rect_trait := t.expect_trait(traits, t.Rect, "Background trait expects rect")
 	anchor := t.get_anchor(traits)
 
 	parent_offset := get_parent_offset(traits)
 
-	rec := rec_trait.value
+	rect := rect_trait.value
 
 	rl.DrawRectanglePro(
-		{rec.x + parent_offset.x, rec.y + parent_offset.y, rec.width, rec.height},
+		{rect.x + parent_offset.x, rect.y + parent_offset.y, rect.width, rect.height},
 		anchor,
 		0,
 		border.color,
@@ -79,11 +79,11 @@ get_parent_offset :: proc(traits: []t.Trait) -> rl.Vector2 {
 
 	rec_trait := t.expect_trait(
 		parent_traits.traits,
-		t.Rec,
-		"Parent with relative child needs to have a rec",
+		t.Rect,
+		"Parent with relative child needs to have a rect",
 	)
 
-	rec := rec_trait.value
+	rect := rec_trait.value
 
-	return {rec.x, rec.y} + get_parent_offset(parent_traits.traits)
+	return {rect.x, rect.y} + get_parent_offset(parent_traits.traits)
 }

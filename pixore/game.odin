@@ -65,13 +65,12 @@ init :: proc(pixore: ^internals.Pixore) {
 	context.user_ptr = pixore
 
 	// render the sprite
-	cols := pixore.sprite.size
-	rows := pixore.sprite.size
+	cols := f32(pixore.sprite.size)
 	rl.BeginTextureMode(pixore.sprite_texture)
 	for value, index in pixore.sprite.data {
-		x, y := helpers.get_grid_cell(index, int(cols))
+		x, y := helpers.get_grid_cell(f32(index), cols)
 
-		rl.DrawPixel(c.int(x), c.int(y), get_color(int(value)))
+		rl.DrawPixelV({x, y}, get_color(int(value)))
 	}
 	rl.EndTextureMode()
 

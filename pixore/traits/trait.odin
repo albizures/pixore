@@ -4,7 +4,7 @@ import rl "vendor:raylib"
 
 // Basically a component but with a short name
 Trait :: union #no_nil {
-	Rec,
+	Rect,
 	Pos,
 	Size,
 	Anchor,
@@ -16,7 +16,7 @@ Trait :: union #no_nil {
 	Parent,
 }
 
-Rec :: struct {
+Rect :: struct {
 	value: rl.Rectangle,
 }
 

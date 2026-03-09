@@ -2,7 +2,6 @@ package pixore_internals
 
 import "../helpers"
 import "../traits"
-import "core:c"
 import "core:log"
 import "core:mem"
 import rl "vendor:raylib"
@@ -70,7 +69,9 @@ init_spritor :: proc(spritor: ^Spritor) {
 	// spritor traits
 	append(
 		&spritor.traits,
-		traits.Rec{value = {PADDING, PADDING, f32(win_x) - PADDING_TWO, f32(win_y) - PADDING_TWO}},
+		traits.Rect {
+			value = {PADDING, PADDING, f32(win_x) - PADDING_TWO, f32(win_y) - PADDING_TWO},
+		},
 	)
 	append(&spritor.traits, traits.Background{color = rl.BEIGE})
 	append(
@@ -129,9 +130,10 @@ update_spritor :: proc(spritor: ^Spritor) {
 	}
 
 	if spritor.status == .Open {
-		rec := traits.expect_trait(spritor.traits[:], traits.Rec, "Spritor is missng a rec").value
+		rect :=
+			traits.expect_trait(spritor.traits[:], traits.Rect, "Spritor is missng a rect").value
 
-		if rl.CheckCollisionPointRec(rl.GetMousePosition(), rec) {
+		if rl.CheckCollisionPointRec(rl.GetMousePosition(), rect) {
 			//
 		}
 	}
@@ -161,8 +163,8 @@ draw_canvas :: proc(canvas: Canvas) {
 	p := (^Pixore)(context.user_ptr)
 
 	offset := get_parent_offset(canvas.traits[:])
-	rec := traits.expect_trait_ptr(canvas.traits[:], traits.Rec, "Canvas is missing a rec")
-	helpers.add_rect_to_vec(rec.value, &offset)
+	rect := traits.expect_trait_ptr(canvas.traits[:], traits.Rect, "Canvas is missing a rect")
+	helpers.add_rect_to_vec(rect.value, &offset)
 
 	pixel := rl.Rectangle {
 		width  = f32(canvas.scale),
@@ -189,14 +191,14 @@ draw_canvas :: proc(canvas: Canvas) {
 draw_palette_grid :: proc(grid: Palette_Grid) {
 	for color, index in grid.colors {
 		x, y := helpers.get_grid_cell(index, int(grid.cols))
-		rec := traits.expect_trait_ptr(
+		rect := traits.expect_trait_ptr(
 			color.traits[:],
-			traits.Rec,
-			"Palette Grid is missing a rec",
+			traits.Rect,
+			"Palette Grid is missing a rect",
 		)
 
-		rec.value.x = f32(x * COLOR_SIZE)
-		rec.value.y = f32(y * COLOR_SIZE)
+		rect.value.x = f32(x * COLOR_SIZE)
+		rect.value.y = f32(y * COLOR_SIZE)
 		draw_with_traits(color.traits[:], grid.traits[:])
 	}
 }
@@ -219,7 +221,7 @@ new_canvas :: proc(spritor: Spritor) -> Canvas {
 		offset = {0, 0},
 	}
 
-	append(&canvas.traits, traits.Rec{value = {x = 2, y = 2, width = 64, height = 64}})
+	append(&canvas.traits, traits.Rect{value = {x = 2, y = 2, width = 64, height = 64}})
 	append(&canvas.traits, traits.Position.Relative)
 	append(&canvas.traits, traits.Border{color = rl.BLACK, direction = .Full, width = 1})
 	append(&canvas.traits, traits.Parent{traits = spritor.traits[:]})
@@ -242,7 +244,7 @@ new_palette_grid :: proc(spritor: Spritor) -> Palette_Grid {
 
 	size: f32 = PALETTE_COLS * COLOR_SIZE
 
-	append(&grid.traits, traits.Rec{value = {x = 70, y = 2, width = size, height = size}})
+	append(&grid.traits, traits.Rect{value = {x = 70, y = 2, width = size, height = size}})
 	append(&grid.traits, traits.Position.Relative)
 	append(&grid.traits, traits.Border{color = rl.BLACK, direction = .Full, width = 1})
 	append(&grid.traits, traits.Parent{traits = spritor.traits[:]})
@@ -258,7 +260,7 @@ new_palette_grid :: proc(spritor: Spritor) -> Palette_Grid {
 
 		append(
 			&new_color.traits,
-			traits.Rec{value = {x = 0, y = 0, width = COLOR_SIZE, height = COLOR_SIZE}},
+			traits.Rect{value = {x = 0, y = 0, width = COLOR_SIZE, height = COLOR_SIZE}},
 		)
 		append(&new_color.traits, traits.Background{color = color})
 		append(&new_color.traits, traits.Position.Relative)
