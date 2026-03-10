@@ -10,9 +10,6 @@ Direction :: enum {
 	Right,
 	Vertical,
 	Horizontal,
-
-	// flags
-	Is_Mouse_Interactive,
 }
 
 Is_Mouse_Interactive :: struct {}

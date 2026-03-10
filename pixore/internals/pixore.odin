@@ -1,5 +1,6 @@
 package pixore_internals
 
+import "../traits"
 import rl "vendor:raylib"
 
 Sprite :: struct {
@@ -28,6 +29,8 @@ Pixore :: struct {
 	sprite:         Sprite,
 	sprite_texture: rl.RenderTexture2D,
 	spritor:        Spritor,
+	world:          traits.World,
+	root_entity:    traits.Entity_Id,
 }
 
 PALETTE_CODES := [?]rune {

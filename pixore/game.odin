@@ -6,6 +6,7 @@ import "core:log"
 import "core:strings"
 import "helpers"
 import "internals"
+import "traits"
 import rl "vendor:raylib"
 
 create :: proc() -> internals.Pixore {
@@ -73,6 +74,10 @@ init :: proc(pixore: ^internals.Pixore) {
 		rl.DrawPixelV({f32(x), f32(y)}, get_color(int(value)))
 	}
 	rl.EndTextureMode()
+
+
+	pixore.root_entity =
+		traits.make_entity(&pixore.world, traits.Rect{0, 0, pixore.resolution.x, pixore.resolution.y}).id
 }
 
 start :: proc(
@@ -99,7 +104,7 @@ start :: proc(
 
 		// /* */rl.DrawFPS(0, 0)
 		/* */draw(state^)
-		internals.draw_spritor(pixore.spritor)
+		internals.draw_spritor(pixore^)
 
 		// end drawing canvas
 		rl.EndMode2D()

@@ -6,3 +6,7 @@ import rl "vendor:raylib"
 // update_spritor :: proc(spritor: ^Spritor) {
 
 // }
+
+check_children :: proc(spritor: ^Spritor) {
+
+}

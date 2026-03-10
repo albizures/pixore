@@ -13,14 +13,20 @@ Trait :: union #no_nil {
 	Margin,
 	Padding,
 	Position,
-	Parent,
+
+	// connections
+	Parent2,
+	Child,
+
+	// flags
+	Is_Mouse_Interactive,
 }
 
 Rect :: rl.Rectangle
 
-Parent :: struct {
-	traits: []Trait,
-}
+Parent2 :: distinct Entity_Id
+
+Child :: distinct Entity_Id
 
 Position :: enum {
 	Relative,
@@ -33,8 +39,18 @@ Size :: distinct rl.Vector2
 
 Anchor :: distinct rl.Vector2
 
+find_trait :: proc {
+	find_trait_by_id,
+	find_trait_in,
+}
 
-find_trait :: proc(traits: []Trait, $Type: typeid) -> Maybe(Type) {
+find_trait_by_id :: proc(world: World, entity_id: Entity_Id, $Type: typeid) -> Maybe(Trait) {
+	traits := get_traits(world, entity_id)
+
+	return find_trait_in(traits, Type)
+}
+
+find_trait_in :: proc(traits: []Trait, $Type: typeid) -> Maybe(Type) {
 	for trait in traits {
 		#partial switch v in trait {
 		case Type:
@@ -45,8 +61,23 @@ find_trait :: proc(traits: []Trait, $Type: typeid) -> Maybe(Type) {
 	return nil
 }
 
+expect_trait :: proc {
+	expect_trait_by_id,
+	expect_trait_in,
+}
 
-expect_trait :: proc(
+expect_trait_by_id :: proc(
+	world: World,
+	entity_id: Entity_Id,
+	$Type: typeid,
+	msg: string,
+	loc := #caller_location,
+) -> Type {
+	traits := get_traits(world, entity_id)
+	return expect_trait_in(traits, Type, msg, loc)
+}
+
+expect_trait_in :: proc(
 	traits: []Trait,
 	$Type: typeid,
 	msg: string,
@@ -64,6 +95,10 @@ find_trait_ptr :: proc(traits: []Trait, $Type: typeid) -> Maybe(^Type) {
 	}
 
 	return nil
+}
+
+has_trait :: proc(traits: []Trait, $Type: typeid) -> bool {
+	return find_trait(traits, Type) != nil
 }
 
 expect_trait_ptr :: proc(
