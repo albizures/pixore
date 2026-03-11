@@ -73,8 +73,7 @@ init_spritor :: proc(p: ^Pixore) {
 		Border{color = rl.BLACK, width = 1, kind = .Outside, direction = .Full},
 	)
 
-	add_child(&p.world, spritor.entity_id, canvas.entity_id)
-	add_child(&p.world, spritor.entity_id, palette.entity_id)
+	add_child(&p.world, spritor.entity_id, canvas.entity_id, palette.entity_id)
 
 	spritor.canvas = canvas
 	spritor.palette = palette

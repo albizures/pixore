@@ -11,7 +11,12 @@ Children :: struct {
 	entities:  [dynamic]traits.Entity,
 }
 
-add_child :: proc(
+add_child :: proc {
+	add_one_child,
+	add_children,
+}
+
+add_one_child :: proc(
 	world: ^traits.World,
 	parent_id: traits.Entity,
 	child_id: traits.Entity,
@@ -32,4 +37,15 @@ add_child :: proc(
 
 	// and we do it again but now with the parent having an initialized Children trait
 	add_child(world, parent_id, child_id)
+}
+
+add_children :: proc(
+	world: ^traits.World,
+	parent_id: traits.Entity,
+	child_ids: ..traits.Entity,
+	allocator := context.allocator,
+) {
+	for child_id in child_ids {
+		add_child(world, parent_id, child_id, allocator)
+	}
 }
