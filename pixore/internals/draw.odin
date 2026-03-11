@@ -2,48 +2,33 @@ package pixore_internals
 
 import "../helpers"
 import t "../traits"
-import "core:debug/trace"
-import "core:fmt"
-import "core:log"
 import rl "vendor:raylib"
 
-draw_with_id :: proc(world: t.World, id: t.Entity_Id) {
-	entity := t.get_entity(world, id)
 
-	draw_with_traits(world, entity.traits[:])
-}
+draw_with_traits :: proc(world: t.World2, id: t.Entity_Id) {
+	if border, has_border := t.get_trait(world, id, t.Border); has_border {
+		draw_border(world, border^, id)
+	}
 
-draw_with_traits :: proc(world: t.World, traits: []t.Trait) {
-	for trait in traits {
-		#partial switch v in trait {
-		case t.Border:
-			draw_border(world, v, traits)
-		case t.Background:
-			draw_background(world, v, traits)
-		case t.Child:
-			draw_with_id(world, t.Entity_Id(v))
-		case t.Margin,
-		     t.Padding,
-		     t.Pos,
-		     t.Size,
-		     t.Rect,
-		     t.Parent2,
-		     t.Position,
-		     t.Anchor,
-		     t.On_Click,
-		     t.Is_Mouse_Interactive:
-		// ignore they don't do anything by themselves
-		case:
-			panic(fmt.tprintln("Trait not implemented in the drawing:", trait))
+	if background, has_background := t.get_trait(world, id, t.Background); has_background {
+		draw_background(world, background^, id)
+	}
+
+	if children, has_children := t.get_trait(world, id, t.Children); has_children {
+		for child in children.entities {
+			draw_with_traits(world, child)
 		}
 	}
 }
 
-draw_border :: proc(world: t.World, border: t.Border, traits: []t.Trait) {
-	rect := t.expect_trait(traits, t.Rect, "Border trait expects rect")
-	anchor := t.get_anchor(traits[:])
+draw_border :: proc(world: t.World2, border: t.Border, entity: t.Entity_Id) {
+	rect_ptr := t.expect_trait(world, entity, t.Rect, "Border trait expects rect")
+	anchor := t.get_anchor(world, entity)
 
-	parent_offset := get_parent_offset(world, traits)
+	// clone the rect so we don't modify the original
+	rect := rect_ptr^
+
+	parent_offset := get_parent_offset(world, entity)
 
 	width := f32(border.width)
 	helpers.add_vec_to_rect(parent_offset, &rect)
@@ -61,11 +46,14 @@ draw_border :: proc(world: t.World, border: t.Border, traits: []t.Trait) {
 	)
 }
 
-draw_background :: proc(world: t.World, border: t.Background, traits: []t.Trait) {
-	rect := t.expect_trait(traits, t.Rect, "Background trait expects rect")
-	anchor := t.get_anchor(traits)
+draw_background :: proc(world: t.World2, border: t.Background, entity: t.Entity_Id) {
+	rect_ptr := t.expect_trait(world, entity, t.Rect, "Background trait expects rect")
+	anchor := t.get_anchor(world, entity)
 
-	parent_offset := get_parent_offset(world, traits)
+	// clone the rect so we don't modify the original
+	rect := rect_ptr^
+
+	parent_offset := get_parent_offset(world, entity)
 
 	rl.DrawRectanglePro(
 		{rect.x + parent_offset.x, rect.y + parent_offset.y, rect.width, rect.height},
@@ -75,32 +63,27 @@ draw_background :: proc(world: t.World, border: t.Background, traits: []t.Trait)
 	)
 }
 
-get_parent_offset :: proc(world: t.World, traits: []t.Trait) -> rl.Vector2 {
-	maybe_parent := t.find_trait(traits, t.Parent2)
-	position_trait := t.find_trait(traits, t.Position)
-
-	position, has_position := position_trait.?
-	if !has_position || position == .Absolute {
+get_parent_offset :: proc(world: t.World2, entity: t.Entity_Id) -> rl.Vector2 {
+	position, has_position := t.get_trait(world, entity, t.Position)
+	if !has_position || position^ == .Absolute {
 		return rl.Vector2{0, 0}
 	}
 
-	parent_id, has_parent := maybe_parent.?
+	parent_id, has_parent := t.get_trait(world, entity, t.Parent2)
 	if !has_parent {
-		if position == .Relative {
+		if position^ == .Relative {
 			panic("Child with relative position but without parent")
 		}
 
 		return rl.Vector2{0, 0}
 	}
 
-	parent_traits := t.get_traits(world, t.Entity_Id(parent_id))
-
-
 	rect := t.expect_trait(
-		parent_traits,
+		world,
+		t.Entity_Id(parent_id^),
 		t.Rect,
 		"Parent with relative child needs to have a rect",
 	)
 
-	return {rect.x, rect.y} + get_parent_offset(world, parent_traits)
+	return {rect.x, rect.y} + get_parent_offset(world, t.Entity_Id(parent_id^))
 }

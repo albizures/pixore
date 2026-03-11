@@ -64,16 +64,22 @@ init_spritor :: proc(p: ^Pixore) {
 
 	PADDING_TWO := PADDING * 2
 
-	spritor.entity_id =
-		traits.make_entity(&p.world, traits.Rect{PADDING, PADDING, f32(win_x) - PADDING_TWO, f32(win_y) - PADDING_TWO}, traits.Background{color = rl.BEIGE}, traits.Border{color = rl.BLACK, width = 1, kind = .Outside, direction = .Full}).id
+	spritor.entity_id = traits.make_entity2(&p.world)
+	traits.add(
+		&p.world,
+		spritor.entity_id,
+		traits.Rect{rect = {PADDING, PADDING, f32(win_x) - PADDING_TWO, f32(win_y) - PADDING_TWO}},
+		traits.Background{color = rl.BEIGE},
+		traits.Border{color = rl.BLACK, width = 1, kind = .Outside, direction = .Full},
+	)
 
-	traits.add_child(p.world, spritor.entity_id, canvas.entity_id)
-	traits.add_child(p.world, spritor.entity_id, palette.entity_id)
+	traits.add_child(&p.world, spritor.entity_id, canvas.entity_id)
+	traits.add_child(&p.world, spritor.entity_id, palette.entity_id)
 
 	spritor.canvas = canvas
 	spritor.palette = palette
 
-	traits.add_child(p.world, p.root_entity, spritor.entity_id)
+	traits.add_child(&p.world, p.root_entity, spritor.entity_id)
 
 	log.info("Spritor id", spritor.entity_id)
 	log.info("Palette id", palette.entity_id)
@@ -126,8 +132,13 @@ update_spritor :: proc(p: ^Pixore) {
 	}
 
 	if spritor.status == .Open {
-		spritor_traits := traits.get_traits(p.world, spritor.entity_id)
-		rect := traits.expect_trait(spritor_traits, traits.Rect, "Spritor is missng a rect")
+
+		rect := traits.expect_trait(
+			p.world,
+			spritor.entity_id,
+			traits.Rect,
+			"Spritor is missng a rect",
+		)
 
 		if is_mouse_pressed(.LEFT) && rl.CheckCollisionPointRec(get_mouse_position(), rect) {
 			deep_interactions(p, spritor.entity_id, get_mouse_position())
@@ -140,16 +151,15 @@ draw_spritor :: proc(p: Pixore) {
 		return
 	}
 
-	draw_with_id(p.world, p.spritor.entity_id)
+	draw_with_traits(p.world, p.spritor.entity_id)
 	draw_canvas(p, p.spritor.canvas)
 }
 
 draw_canvas :: proc(p: Pixore, canvas: Canvas) {
-	canvas_traits := traits.get_traits(p.world, canvas.entity_id)
+	offset := get_parent_offset(p.world, canvas.entity_id)
+	rect := traits.expect_trait(p.world, canvas.entity_id, traits.Rect, "Canvas is missing a rect")
 
-	offset := get_parent_offset(p.world, canvas_traits[:])
-	rect := traits.expect_trait_ptr(canvas_traits, traits.Rect, "Canvas is missing a rect")
-	helpers.add_rect_to_vec(rect^, &offset)
+	helpers.add_rect_to_vec(rect, &offset)
 
 	pixel := rl.Rectangle {
 		width  = f32(canvas.scale),
@@ -179,15 +189,17 @@ new_canvas :: proc(p: ^Pixore) -> Canvas {
 		offset = {0, 0},
 	}
 
-	entity := traits.make_entity(
+	entity_id := traits.make_entity2(&p.world)
+	traits.add(
 		&p.world,
+		entity_id,
 		traits.Rect{x = 2, y = 2, width = 64, height = 64},
 		traits.Position.Relative,
 		traits.Border{color = rl.BLACK, direction = .Full, width = 1},
 		traits.Background{color = rl.BROWN},
 	)
 
-	canvas.entity_id = entity.id
+	canvas.entity_id = entity_id
 
 	return canvas
 }
@@ -202,15 +214,18 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 	}
 
 	size: f32 = PALETTE_COLS * COLOR_SIZE
-	entity := traits.make_entity(
+	entity_id := traits.make_entity2(&p.world)
+
+	traits.add(
 		&p.world,
+		entity_id,
 		traits.Rect{x = 70, y = 2, width = size, height = size},
 		traits.Position.Relative,
 		traits.Border{color = rl.BLACK, direction = .Full, width = 1},
 		traits.Background{color = rl.BROWN},
 	)
 
-	grid.entity_id = entity.id
+	grid.entity_id = entity_id
 	rect := rl.Rectangle {
 		x      = 0,
 		y      = 0,
@@ -221,8 +236,10 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 	for color, index in p.palette {
 		x, y := helpers.get_grid_cell(index, int(grid.cols))
 
-		entity_color := traits.make_entity(
+		entity_color_id := traits.make_entity2(&p.world)
+		traits.add(
 			&p.world,
+			entity_color_id,
 			traits.Rect {
 				x = f32(x * COLOR_SIZE),
 				y = f32(y * COLOR_SIZE),
@@ -245,20 +262,22 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 			rect.height = COLOR_SIZE
 		}
 
-		traits.add_child(p.world, entity, entity_color)
+		traits.add_child(&p.world, entity_id, entity_color_id)
 	}
 
-	primary_color_entity := traits.make_entity(
+	primary_color_entity_id := traits.make_entity2(&p.world)
+	traits.add(
 		&p.world,
-		rect,
+		primary_color_entity_id,
+		traits.Rect{rect = rect},
 		traits.Position.Relative,
 		traits.Border{kind = traits.Border_Kind.Inside, width = 1, color = rl.BLACK},
 		traits.Border{kind = traits.Border_Kind.Outside, width = 1, color = rl.WHITE},
 	)
 
-	traits.add_child(p.world, entity, primary_color_entity)
+	traits.add_child(&p.world, entity_id, primary_color_entity_id)
 
-	grid.current_color_entity_id = primary_color_entity.id
+	grid.current_color_entity_id = primary_color_entity_id
 
 	return grid
 }

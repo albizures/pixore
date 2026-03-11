@@ -1,5 +1,7 @@
 package traits
 
+import "core:fmt"
+import "core:mem"
 import rl "vendor:raylib"
 
 // Basically a component but with a short name
@@ -26,11 +28,18 @@ Trait :: union #no_nil {
 	On_Click,
 }
 
-Rect :: rl.Rectangle
+Rect :: struct {
+	using rect: rl.Rectangle,
+}
 
 Parent2 :: distinct Entity_Id
 
 Child :: distinct Entity_Id
+
+Children :: struct {
+	allocator: mem.Allocator,
+	entities:  [dynamic]Entity_Id,
+}
 
 Position :: enum {
 	Relative,
@@ -45,103 +54,33 @@ Pos :: distinct rl.Vector2
 
 Size :: distinct rl.Vector2
 
-Anchor :: distinct rl.Vector2
-
-find_trait :: proc {
-	find_trait_by_id,
-	find_trait_in,
+Anchor :: struct {
+	using vec: rl.Vector2,
 }
 
-get_all :: proc(
-	world: World,
-	entity_id: Entity_Id,
+expect_trait :: proc(
+	world: World2,
+	entity: Entity_Id,
 	$Type: typeid,
-	allocator := context.allocator,
-) -> [dynamic]Type {
-	traits := get_traits(world, entity_id)
-
-	found := make([dynamic]Type, allocator)
-
-	for trait in traits {
-		if value, is_of_type := trait.(Type); is_of_type {
-			append(&found, value)
-		}
-	}
-
-	return found
-}
-
-find_trait_by_id :: proc(world: World, entity_id: Entity_Id, $Type: typeid) -> Maybe(Trait) {
-	traits := get_traits(world, entity_id)
-
-	return find_trait_in(traits, Type)
-}
-
-find_trait_in :: proc(traits: []Trait, $Type: typeid) -> Maybe(Type) {
-	for trait in traits {
-		#partial switch v in trait {
-		case Type:
-			return v
-		}
-	}
-
-	return nil
-}
-
-expect_trait :: proc {
-	expect_trait_by_id,
-	expect_trait_in,
-}
-
-expect_trait_by_id :: proc(
-	world: World,
-	entity_id: Entity_Id,
-	$Type: typeid,
-	msg: string,
-	loc := #caller_location,
-) -> Type {
-	traits := get_traits(world, entity_id)
-	return expect_trait_in(traits, Type, msg, loc)
-}
-
-expect_trait_in :: proc(
-	traits: []Trait,
-	$Type: typeid,
-	msg: string,
-	loc := #caller_location,
-) -> Type {
-	return find_trait(traits, Type).? or_else panic(msg, loc)
-}
-
-find_trait_ptr :: proc(traits: []Trait, $Type: typeid) -> Maybe(^Type) {
-	for &trait in traits {
-		#partial switch &v in trait {
-		case Type:
-			return &v
-		}
-	}
-
-	return nil
-}
-
-has_trait :: proc(traits: []Trait, $Type: typeid) -> bool {
-	return find_trait(traits, Type) != nil
-}
-
-expect_trait_ptr :: proc(
-	traits: []Trait,
-	$Type: typeid,
-	msg: string,
+	message: string,
 	loc := #caller_location,
 ) -> ^Type {
-	return find_trait_ptr(traits, Type).? or_else panic(msg, loc)
+	trait :=
+		get_trait(world, entity, Type) or_else panic(
+			fmt.tprintln(message, ": name =", type_info_of(Type).id, ", entity =", entity),
+			loc,
+		)
+
+	return trait
 }
 
 // anchor should always be defaulted into {0, 0}
-get_anchor :: proc(traits: []Trait) -> rl.Vector2 {
-	anchor_trait := find_trait(traits, Anchor)
+get_anchor :: proc(world: World2, entity: Entity_Id) -> Anchor {
+	anchor, has_anchor := get_trait(world, entity, Anchor)
 
-	anchor, ok := anchor_trait.?
+	if !has_anchor {
+		return Anchor{vec = rl.Vector2{}}
+	}
 
-	return rl.Vector2(anchor)
+	return anchor^
 }

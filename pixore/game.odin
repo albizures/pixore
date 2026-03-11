@@ -76,8 +76,14 @@ init :: proc(pixore: ^internals.Pixore) {
 	rl.EndTextureMode()
 
 
-	pixore.root_entity =
-		traits.make_entity(&pixore.world, traits.Rect{0, 0, pixore.resolution.x, pixore.resolution.y}).id
+	pixore.world = traits.make_world(context.allocator)
+	pixore.root_entity = traits.make_entity2(&pixore.world)
+	traits.add(&pixore.world, traits.Rect)
+	traits.add(
+		&pixore.world,
+		pixore.root_entity,
+		traits.Rect{rect = {0, 0, pixore.resolution.x, pixore.resolution.y}},
+	)
 }
 
 start :: proc(

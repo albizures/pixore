@@ -3,61 +3,68 @@ package traits
 import "core:fmt"
 import "core:mem"
 
-World :: struct {
-	allocator: mem.Allocator,
-	entities:  map[Entity_Id]Entity,
-}
-
 Entity_Id :: distinct int
 
-Entity :: struct {
-	id:     Entity_Id,
-	traits: [dynamic]Trait,
-}
+add_child :: proc(
+	world: ^World2,
+	parent_id: Entity_Id,
+	child_id: Entity_Id,
+	allocator := context.allocator,
+) {
+	if children, has_children := get_trait(world^, parent_id, Children); has_children {
+		append(&children.entities, child_id)
+		add(world, child_id, Parent2(parent_id))
 
-get_traits :: proc(world: World, id: Entity_Id) -> []Trait {
-	return get_entity(world, id).traits[:]
-}
-
-get_entity :: proc(world: World, id: Entity_Id) -> ^Entity {
-	if id in world.entities {
-		return &world.entities[id]
+		return
 	}
 
-	panic(fmt.tprintln("entity not found:", id))
+	add(
+		world,
+		parent_id,
+		Children{allocator = allocator, entities = make([dynamic]Entity_Id, allocator)},
+	)
+
+	// and we do it again but now with the parent having an initialized Children trait
+	add_child(world, parent_id, child_id)
 }
 
-add_child :: proc {
-	add_child_by_id,
-	add_child_entity,
+
+add_trait_2 :: proc(world: ^World2, entity_id: Entity_Id, data_1: $T, data_2: $U) {
+	add(world, entity_id, data_1)
+	add(world, entity_id, data_2)
+}
+add_trait_3 :: proc(world: ^World2, entity_id: Entity_Id, data_1: $T, data_2: $U, data_3: $V) {
+	add(world, entity_id, data_1)
+	add(world, entity_id, data_2)
+	add(world, entity_id, data_3)
 }
 
-add_child_by_id :: proc(world: World, parent_id: Entity_Id, child_id: Entity_Id) {
-	parent := get_entity(world, parent_id)
-	child := get_entity(world, child_id)
-
-	append(&parent.traits, Child(child_id))
-	append(&child.traits, Parent2(parent_id))
+add_trait_4 :: proc(
+	world: ^World2,
+	entity_id: Entity_Id,
+	data_1: $T,
+	data_2: $U,
+	data_3: $V,
+	data_4: $W,
+) {
+	add(world, entity_id, data_1)
+	add(world, entity_id, data_2)
+	add(world, entity_id, data_3)
+	add(world, entity_id, data_4)
 }
 
-make_entity :: proc(world: ^World, traits: ..Trait) -> Entity {
-	id := Entity_Id(len(world.entities))
-
-	entity := Entity {
-		id     = id,
-		traits = make([dynamic]Trait, world.allocator),
-	}
-
-	for trait in traits {
-		copy := trait
-		append(&entity.traits, copy)
-	}
-
-	world.entities[id] = entity
-
-	return entity
-}
-
-add_child_entity :: proc(world: World, parent: Entity, child: Entity) {
-	add_child(world, parent.id, child.id)
+add_trait_5 :: proc(
+	world: ^World2,
+	entity_id: Entity_Id,
+	data_1: $T,
+	data_2: $U,
+	data_3: $V,
+	data_4: $W,
+	data_5: $X,
+) {
+	add(world, entity_id, data_1)
+	add(world, entity_id, data_2)
+	add(world, entity_id, data_3)
+	add(world, entity_id, data_4)
+	add(world, entity_id, data_5)
 }
