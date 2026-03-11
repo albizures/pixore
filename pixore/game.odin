@@ -77,12 +77,12 @@ init :: proc(pixore: ^internals.Pixore) {
 
 
 	pixore.world = traits.make_world(context.allocator)
-	pixore.root_entity = traits.make_entity2(&pixore.world)
-	traits.add(&pixore.world, traits.Rect)
+	pixore.root_entity = traits.make_entity(&pixore.world)
+	traits.add(&pixore.world, traits.Pos)
 	traits.add(
 		&pixore.world,
 		pixore.root_entity,
-		traits.Rect{rect = {0, 0, pixore.resolution.x, pixore.resolution.y}},
+		traits.Pos{rect = {0, 0, pixore.resolution.x, pixore.resolution.y}},
 	)
 }
 

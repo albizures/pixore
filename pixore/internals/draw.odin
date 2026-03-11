@@ -5,7 +5,7 @@ import t "../traits"
 import rl "vendor:raylib"
 
 
-draw_with_traits :: proc(world: t.World2, id: t.Entity_Id) {
+draw_with_traits :: proc(world: t.World, id: t.Entity_Id) {
 	if border, has_border := t.get_trait(world, id, t.Border); has_border {
 		draw_border(world, border^, id)
 	}
@@ -21,8 +21,8 @@ draw_with_traits :: proc(world: t.World2, id: t.Entity_Id) {
 	}
 }
 
-draw_border :: proc(world: t.World2, border: t.Border, entity: t.Entity_Id) {
-	rect_ptr := t.expect_trait(world, entity, t.Rect, "Border trait expects rect")
+draw_border :: proc(world: t.World, border: t.Border, entity: t.Entity_Id) {
+	rect_ptr := t.expect_trait(world, entity, t.Pos, "Border trait expects position")
 	anchor := t.get_anchor(world, entity)
 
 	// clone the rect so we don't modify the original
@@ -46,8 +46,8 @@ draw_border :: proc(world: t.World2, border: t.Border, entity: t.Entity_Id) {
 	)
 }
 
-draw_background :: proc(world: t.World2, border: t.Background, entity: t.Entity_Id) {
-	rect_ptr := t.expect_trait(world, entity, t.Rect, "Background trait expects rect")
+draw_background :: proc(world: t.World, border: t.Background, entity: t.Entity_Id) {
+	rect_ptr := t.expect_trait(world, entity, t.Pos, "Background trait expects position")
 	anchor := t.get_anchor(world, entity)
 
 	// clone the rect so we don't modify the original
@@ -63,13 +63,13 @@ draw_background :: proc(world: t.World2, border: t.Background, entity: t.Entity_
 	)
 }
 
-get_parent_offset :: proc(world: t.World2, entity: t.Entity_Id) -> rl.Vector2 {
-	position, has_position := t.get_trait(world, entity, t.Position)
+get_parent_offset :: proc(world: t.World, entity: t.Entity_Id) -> rl.Vector2 {
+	position, has_position := t.get_trait(world, entity, t.Position_Type)
 	if !has_position || position^ == .Absolute {
 		return rl.Vector2{0, 0}
 	}
 
-	parent_id, has_parent := t.get_trait(world, entity, t.Parent2)
+	parent_id, has_parent := t.get_trait(world, entity, t.Parent)
 	if !has_parent {
 		if position^ == .Relative {
 			panic("Child with relative position but without parent")
@@ -81,8 +81,8 @@ get_parent_offset :: proc(world: t.World2, entity: t.Entity_Id) -> rl.Vector2 {
 	rect := t.expect_trait(
 		world,
 		t.Entity_Id(parent_id^),
-		t.Rect,
-		"Parent with relative child needs to have a rect",
+		t.Pos,
+		"Parent with relative child needs to have a position",
 	)
 
 	return {rect.x, rect.y} + get_parent_offset(world, t.Entity_Id(parent_id^))

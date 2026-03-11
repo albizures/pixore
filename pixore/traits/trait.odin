@@ -6,7 +6,6 @@ import rl "vendor:raylib"
 
 // Basically a component but with a short name
 Trait :: union #no_nil {
-	Rect,
 	Pos,
 	Size,
 	Anchor,
@@ -14,34 +13,27 @@ Trait :: union #no_nil {
 	Background,
 	Margin,
 	Padding,
-	Position,
+	Position_Type,
 
 	// connections
-	Parent2,
-	Child,
-
-	// flags
-	Is_Mouse_Interactive,
-
+	Parent,
 
 	// events
 	On_Click,
 }
 
-Rect :: struct {
+Pos :: struct {
 	using rect: rl.Rectangle,
 }
 
-Parent2 :: distinct Entity_Id
-
-Child :: distinct Entity_Id
+Parent :: distinct Entity_Id
 
 Children :: struct {
 	allocator: mem.Allocator,
 	entities:  [dynamic]Entity_Id,
 }
 
-Position :: enum {
+Position_Type :: enum {
 	Relative,
 	Absolute,
 }
@@ -50,8 +42,6 @@ On_Click :: struct {
 	callback: proc(data: rawptr),
 }
 
-Pos :: distinct rl.Vector2
-
 Size :: distinct rl.Vector2
 
 Anchor :: struct {
@@ -59,7 +49,7 @@ Anchor :: struct {
 }
 
 expect_trait :: proc(
-	world: World2,
+	world: World,
 	entity: Entity_Id,
 	$Type: typeid,
 	message: string,
@@ -75,7 +65,7 @@ expect_trait :: proc(
 }
 
 // anchor should always be defaulted into {0, 0}
-get_anchor :: proc(world: World2, entity: Entity_Id) -> Anchor {
+get_anchor :: proc(world: World, entity: Entity_Id) -> Anchor {
 	anchor, has_anchor := get_trait(world, entity, Anchor)
 
 	if !has_anchor {

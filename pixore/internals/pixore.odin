@@ -29,7 +29,7 @@ Pixore :: struct {
 	sprite:         Sprite,
 	sprite_texture: rl.RenderTexture2D,
 	spritor:        Spritor,
-	world:          traits.World2,
+	world:          traits.World,
 	root_entity:    traits.Entity_Id,
 }
 

@@ -5,7 +5,7 @@ import "../traits"
 import rl "vendor:raylib"
 
 handle_interactions :: proc(p: ^Pixore) {
-	rect := traits.expect_trait(p.world, p.root_entity, traits.Rect, "Spritor is missng a rect")
+	rect := traits.expect_trait(p.world, p.root_entity, traits.Pos, "Spritor is missng a position")
 
 	if is_mouse_pressed(.LEFT) {
 		deep_interactions(p, p.root_entity, get_mouse_position())
@@ -13,7 +13,7 @@ handle_interactions :: proc(p: ^Pixore) {
 }
 
 deep_interactions :: proc(p: ^Pixore, id: traits.Entity_Id, pos: rl.Vector2) {
-	rect, has_rect := traits.get_trait(p.world, id, traits.Rect)
+	rect, has_rect := traits.get_trait(p.world, id, traits.Pos)
 
 	if !has_rect {
 		return
