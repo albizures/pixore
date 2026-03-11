@@ -12,7 +12,7 @@ handle_interactions :: proc(p: ^Pixore) {
 	}
 }
 
-deep_interactions :: proc(p: ^Pixore, id: traits.Entity_Id, pos: rl.Vector2) {
+deep_interactions :: proc(p: ^Pixore, id: traits.Entity, pos: rl.Vector2) {
 	rect, has_rect := traits.get_trait(p.world, id, Pos)
 
 	if !has_rect {
@@ -31,7 +31,7 @@ deep_interactions :: proc(p: ^Pixore, id: traits.Entity_Id, pos: rl.Vector2) {
 
 	if has_children {
 		for child in children.entities {
-			deep_interactions(p, traits.Entity_Id(child), pos)
+			deep_interactions(p, traits.Entity(child), pos)
 		}
 	}
 

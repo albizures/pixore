@@ -15,8 +15,8 @@ Status :: enum {
 Palette_Grid :: struct {
 	cols:                    u8,
 	color_index:             int,
-	entity_id:               traits.Entity_Id,
-	current_color_entity_id: traits.Entity_Id,
+	entity_id:               traits.Entity,
+	current_color_entity_id: traits.Entity,
 }
 
 Canvas :: struct {
@@ -24,7 +24,7 @@ Canvas :: struct {
 	scale:     int,
 	// the offset of the canvas from the top-left corner of the window
 	offset:    rl.Vector2,
-	entity_id: traits.Entity_Id,
+	entity_id: traits.Entity,
 }
 
 
@@ -38,7 +38,7 @@ Spritor :: struct {
 	limit_press_rate: f64,
 	canvas:           Canvas,
 	palette:          Palette_Grid,
-	entity_id:        traits.Entity_Id,
+	entity_id:        traits.Entity,
 }
 
 PADDING: f32 : 2

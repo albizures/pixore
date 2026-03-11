@@ -40,7 +40,7 @@ test_add_trait_to_entity :: proc(t: ^testing.T) {
 
 	traits.add(&world, Position)
 
-	entity_id := traits.Entity_Id(1)
+	entity_id := traits.Entity(1)
 	pos := Position {
 		x = 10,
 		y = 20,
@@ -77,7 +77,7 @@ test_get_trait :: proc(t: ^testing.T) {
 
 	traits.add(&world, Position)
 
-	entity_id := traits.Entity_Id(1)
+	entity_id := traits.Entity(1)
 	pos := Position {
 		x = 15,
 		y = 25,
@@ -104,7 +104,7 @@ test_get_trait :: proc(t: ^testing.T) {
 	}
 
 	// Test missing entity
-	_, ok2 := traits.get(&world, traits.Entity_Id(2), Position)
+	_, ok2 := traits.get(&world, traits.Entity(2), Position)
 	testing.expect(t, !ok2, "Should not retrieve trait for missing entity")
 
 	// Test missing trait type
@@ -119,9 +119,9 @@ test_remove_trait :: proc(t: ^testing.T) {
 
 	traits.add(&world, Position)
 
-	e1 := traits.Entity_Id(1)
-	e2 := traits.Entity_Id(2)
-	e3 := traits.Entity_Id(3)
+	e1 := traits.Entity(1)
+	e2 := traits.Entity(2)
+	e3 := traits.Entity(3)
 
 	traits.add(&world, e1, Position{1, 1})
 	traits.add(&world, e2, Position{2, 2})

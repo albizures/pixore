@@ -7,7 +7,7 @@ import "core:mem"
 World :: struct {
 	allocator: mem.Allocator,
 	stores:    map[typeid]^Store_Header,
-	counter:   Entity_Id,
+	counter:   Entity,
 }
 
 
@@ -16,8 +16,8 @@ Store_Header :: struct {
 	// Points to [dynamic]T
 	instances: rawptr,
 	// list in the same order as in instances
-	entities:  [dynamic]Entity_Id,
-	sparse:    map[Entity_Id]int,
+	entities:  [dynamic]Entity,
+	sparse:    map[Entity]int,
 	type_size: int,
 }
 
@@ -42,7 +42,7 @@ make_world :: proc(allocator := context.allocator) -> World {
 	}
 }
 
-make_entity :: proc(world: ^World) -> Entity_Id {
+make_entity :: proc(world: ^World) -> Entity {
 	id := world.counter
 	world.counter += 1
 
@@ -68,13 +68,13 @@ add_trait_to_world :: proc(world: ^World, $T: typeid) {
 	instances^ = make([dynamic]T, world.allocator)
 	store.instances = rawptr(instances)
 	store.type_size = size_of(T)
-	store.sparse = make(map[Entity_Id]int, world.allocator)
-	store.entities = make([dynamic]Entity_Id, world.allocator)
+	store.sparse = make(map[Entity]int, world.allocator)
+	store.entities = make([dynamic]Entity, world.allocator)
 
 	world.stores[T] = store
 }
 
-remove :: proc(world: ^World, entity: Entity_Id, $T: typeid) {
+remove :: proc(world: ^World, entity: Entity, $T: typeid) {
 	store, ok := world.stores[T]
 	if !ok do panic(fmt.tprintf("no such trait type: %v", typeid_of(T)))
 
@@ -100,7 +100,7 @@ remove :: proc(world: ^World, entity: Entity_Id, $T: typeid) {
 	delete_key(&store.sparse, entity)
 }
 
-add_trait_to_entity :: proc(world: ^World, entity: Entity_Id, data: $T) {
+add_trait_to_entity :: proc(world: ^World, entity: Entity, data: $T) {
 	store, has_store := world.stores[typeid_of(T)]
 
 	if !has_store {
@@ -117,7 +117,7 @@ add_trait_to_entity :: proc(world: ^World, entity: Entity_Id, data: $T) {
 }
 
 
-get_trait :: proc(world: World, entity: Entity_Id, $T: typeid) -> (^T, bool) {
+get_trait :: proc(world: World, entity: Entity, $T: typeid) -> (^T, bool) {
 	store, ok := world.stores[T]
 	if !ok do return nil, false
 

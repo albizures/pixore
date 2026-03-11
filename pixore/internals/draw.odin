@@ -5,7 +5,7 @@ import t "../traits"
 import rl "vendor:raylib"
 
 
-draw_with_traits :: proc(world: t.World, id: t.Entity_Id) {
+draw_with_traits :: proc(world: t.World, id: t.Entity) {
 	if border, has_border := t.get_trait(world, id, Border); has_border {
 		draw_border(world, border^, id)
 	}
@@ -21,7 +21,7 @@ draw_with_traits :: proc(world: t.World, id: t.Entity_Id) {
 	}
 }
 
-draw_border :: proc(world: t.World, border: Border, entity: t.Entity_Id) {
+draw_border :: proc(world: t.World, border: Border, entity: t.Entity) {
 	rect_ptr := t.expect_trait(world, entity, Pos, "Border trait expects position")
 	anchor := get_anchor(world, entity)
 
@@ -46,7 +46,7 @@ draw_border :: proc(world: t.World, border: Border, entity: t.Entity_Id) {
 	)
 }
 
-draw_background :: proc(world: t.World, border: Background, entity: t.Entity_Id) {
+draw_background :: proc(world: t.World, border: Background, entity: t.Entity) {
 	rect_ptr := t.expect_trait(world, entity, Pos, "Background trait expects position")
 	anchor := get_anchor(world, entity)
 
@@ -63,7 +63,7 @@ draw_background :: proc(world: t.World, border: Background, entity: t.Entity_Id)
 	)
 }
 
-get_parent_offset :: proc(world: t.World, entity: t.Entity_Id) -> rl.Vector2 {
+get_parent_offset :: proc(world: t.World, entity: t.Entity) -> rl.Vector2 {
 	position, has_position := t.get_trait(world, entity, Position_Type)
 	if !has_position || position^ == .Absolute {
 		return rl.Vector2{0, 0}

@@ -54,7 +54,7 @@ Anchor :: struct {
 }
 
 // anchor should always be defaulted into {0, 0}
-get_anchor :: proc(world: traits.World, entity: traits.Entity_Id) -> Anchor {
+get_anchor :: proc(world: traits.World, entity: traits.Entity) -> Anchor {
 	anchor, has_anchor := traits.get_trait(world, entity, Anchor)
 
 	if !has_anchor {

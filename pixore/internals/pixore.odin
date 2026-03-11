@@ -30,7 +30,7 @@ Pixore :: struct {
 	sprite_texture: rl.RenderTexture2D,
 	spritor:        Spritor,
 	world:          traits.World,
-	root_entity:    traits.Entity_Id,
+	root_entity:    traits.Entity,
 }
 
 PALETTE_CODES := [?]rune {
