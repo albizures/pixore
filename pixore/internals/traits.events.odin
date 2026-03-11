@@ -4,15 +4,11 @@ import "../helpers"
 import "../traits"
 import rl "vendor:raylib"
 
-handle_interactions :: proc(p: ^Pixore) {
-	rect := traits.expect_trait(p.world, p.root_entity, Pos, "Spritor is missng a position")
-
-	if is_mouse_pressed(.LEFT) {
-		deep_interactions(p, p.root_entity, get_mouse_position())
-	}
+On_Click :: struct {
+	callback: proc(data: rawptr),
 }
 
-deep_interactions :: proc(p: ^Pixore, id: traits.Entity, pos: rl.Vector2) {
+event_capturing :: proc(p: ^Pixore, id: traits.Entity, pos: rl.Vector2) {
 	rect, has_rect := traits.get_trait(p.world, id, Pos)
 
 	if !has_rect {
@@ -31,7 +27,7 @@ deep_interactions :: proc(p: ^Pixore, id: traits.Entity, pos: rl.Vector2) {
 
 	if has_children {
 		for child in children.entities {
-			deep_interactions(p, traits.Entity(child), pos)
+			event_capturing(p, traits.Entity(child), pos)
 		}
 	}
 

@@ -33,7 +33,3 @@ add_child :: proc(
 	// and we do it again but now with the parent having an initialized Children trait
 	add_child(world, parent_id, child_id)
 }
-
-On_Click :: struct {
-	callback: proc(data: rawptr),
-}

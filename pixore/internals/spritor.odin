@@ -141,7 +141,7 @@ update_spritor :: proc(p: ^Pixore) {
 		)
 
 		if is_mouse_pressed(.LEFT) && rl.CheckCollisionPointRec(get_mouse_position(), rect) {
-			deep_interactions(p, spritor.entity_id, get_mouse_position())
+			event_capturing(p, spritor.entity_id, get_mouse_position())
 		}
 	}
 }
