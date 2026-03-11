@@ -10,10 +10,6 @@ World :: struct {
 	counter:   Entity_Id,
 }
 
-Trait2 :: struct($T: typeid) {
-	type:  T,
-	array: [dynamic]T,
-}
 
 // An internal header to help us manage the raw dynamic arrays
 Store_Header :: struct {

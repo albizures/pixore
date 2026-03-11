@@ -68,18 +68,18 @@ init_spritor :: proc(p: ^Pixore) {
 	traits.add(
 		&p.world,
 		spritor.entity_id,
-		traits.Pos{rect = {PADDING, PADDING, f32(win_x) - PADDING_TWO, f32(win_y) - PADDING_TWO}},
-		traits.Background{color = rl.BEIGE},
-		traits.Border{color = rl.BLACK, width = 1, kind = .Outside, direction = .Full},
+		Pos{rect = {PADDING, PADDING, f32(win_x) - PADDING_TWO, f32(win_y) - PADDING_TWO}},
+		Background{color = rl.BEIGE},
+		Border{color = rl.BLACK, width = 1, kind = .Outside, direction = .Full},
 	)
 
-	traits.add_child(&p.world, spritor.entity_id, canvas.entity_id)
-	traits.add_child(&p.world, spritor.entity_id, palette.entity_id)
+	add_child(&p.world, spritor.entity_id, canvas.entity_id)
+	add_child(&p.world, spritor.entity_id, palette.entity_id)
 
 	spritor.canvas = canvas
 	spritor.palette = palette
 
-	traits.add_child(&p.world, p.root_entity, spritor.entity_id)
+	add_child(&p.world, p.root_entity, spritor.entity_id)
 
 	log.info("Spritor id", spritor.entity_id)
 	log.info("Palette id", palette.entity_id)
@@ -136,7 +136,7 @@ update_spritor :: proc(p: ^Pixore) {
 		rect := traits.expect_trait(
 			p.world,
 			spritor.entity_id,
-			traits.Pos,
+			Pos,
 			"Spritor is missng a position",
 		)
 
@@ -157,12 +157,7 @@ draw_spritor :: proc(p: Pixore) {
 
 draw_canvas :: proc(p: Pixore, canvas: Canvas) {
 	offset := get_parent_offset(p.world, canvas.entity_id)
-	rect := traits.expect_trait(
-		p.world,
-		canvas.entity_id,
-		traits.Pos,
-		"Canvas is missing a position",
-	)
+	rect := traits.expect_trait(p.world, canvas.entity_id, Pos, "Canvas is missing a position")
 
 	helpers.add_rect_to_vec(rect, &offset)
 
@@ -198,10 +193,10 @@ new_canvas :: proc(p: ^Pixore) -> Canvas {
 	traits.add(
 		&p.world,
 		entity_id,
-		traits.Pos{x = 2, y = 2, width = 64, height = 64},
-		traits.Position_Type.Relative,
-		traits.Border{color = rl.BLACK, direction = .Full, width = 1},
-		traits.Background{color = rl.BROWN},
+		Pos{x = 2, y = 2, width = 64, height = 64},
+		Position_Type.Relative,
+		Border{color = rl.BLACK, direction = .Full, width = 1},
+		Background{color = rl.BROWN},
 	)
 
 	canvas.entity_id = entity_id
@@ -224,10 +219,10 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 	traits.add(
 		&p.world,
 		entity_id,
-		traits.Pos{x = 70, y = 2, width = size, height = size},
-		traits.Position_Type.Relative,
-		traits.Border{color = rl.BLACK, direction = .Full, width = 1},
-		traits.Background{color = rl.BROWN},
+		Pos{x = 70, y = 2, width = size, height = size},
+		Position_Type.Relative,
+		Border{color = rl.BLACK, direction = .Full, width = 1},
+		Background{color = rl.BROWN},
 	)
 
 	grid.entity_id = entity_id
@@ -245,15 +240,15 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 		traits.add(
 			&p.world,
 			entity_color_id,
-			traits.Pos {
+			Pos {
 				x = f32(x * COLOR_SIZE),
 				y = f32(y * COLOR_SIZE),
 				width = COLOR_SIZE,
 				height = COLOR_SIZE,
 			},
-			traits.Position_Type.Relative,
-			traits.Background{color = color},
-			traits.On_Click {
+			Position_Type.Relative,
+			Background{color = color},
+			On_Click {
 				callback = proc(so: rawptr) {
 					log.warn("clicked on color", so)
 				},
@@ -267,20 +262,20 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 			rect.height = COLOR_SIZE
 		}
 
-		traits.add_child(&p.world, entity_id, entity_color_id)
+		add_child(&p.world, entity_id, entity_color_id)
 	}
 
 	primary_color_entity_id := traits.make_entity(&p.world)
 	traits.add(
 		&p.world,
 		primary_color_entity_id,
-		traits.Pos{rect = rect},
-		traits.Position_Type.Relative,
-		traits.Border{kind = traits.Border_Kind.Inside, width = 1, color = rl.BLACK},
-		traits.Border{kind = traits.Border_Kind.Outside, width = 1, color = rl.WHITE},
+		Pos{rect = rect},
+		Position_Type.Relative,
+		Border{kind = Border_Kind.Inside, width = 1, color = rl.BLACK},
+		Border{kind = Border_Kind.Outside, width = 1, color = rl.WHITE},
 	)
 
-	traits.add_child(&p.world, entity_id, primary_color_entity_id)
+	add_child(&p.world, entity_id, primary_color_entity_id)
 
 	grid.current_color_entity_id = primary_color_entity_id
 
