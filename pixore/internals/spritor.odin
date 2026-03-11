@@ -59,7 +59,7 @@ init_spritor :: proc(p: ^Pixore) {
 	// spritor.traits = make([dynamic]traits.Trait, spritor.allocator)
 	canvas := new_canvas(p)
 	palette := new_palette_grid(p)
-	log.error("canvas entity_id", canvas.entity_id, "and palette entity_id", palette.entity_id)
+
 	win_x, win_y := win_size()
 
 	PADDING_TWO := PADDING * 2
@@ -74,6 +74,10 @@ init_spritor :: proc(p: ^Pixore) {
 	spritor.palette = palette
 
 	traits.add_child(p.world, p.root_entity, spritor.entity_id)
+
+	log.info("Spritor id", spritor.entity_id)
+	log.info("Palette id", palette.entity_id)
+	log.info("Canvas id", canvas.entity_id)
 }
 
 new_spritor :: proc() -> Spritor {
@@ -126,14 +130,12 @@ update_spritor :: proc(p: ^Pixore) {
 		rect := traits.expect_trait(spritor_traits, traits.Rect, "Spritor is missng a rect")
 
 		if is_mouse_pressed(.LEFT) && rl.CheckCollisionPointRec(get_mouse_position(), rect) {
-			log.warn("clicking!!", rect, get_mouse_position(), rl.GetMousePosition())
-
+			deep_interactions(p, spritor.entity_id, get_mouse_position())
 		}
 	}
 }
 
 draw_spritor :: proc(p: Pixore) {
-
 	if p.spritor.status != .Open {
 		return
 	}
@@ -229,6 +231,11 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 			},
 			traits.Position.Relative,
 			traits.Background{color = color},
+			traits.On_Click {
+				callback = proc(so: rawptr) {
+					log.warn("clicked on color", so)
+				},
+			},
 		)
 
 		if grid.color_index == index {

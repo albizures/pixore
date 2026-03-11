@@ -20,6 +20,10 @@ Trait :: union #no_nil {
 
 	// flags
 	Is_Mouse_Interactive,
+
+
+	// events
+	On_Click,
 }
 
 Rect :: rl.Rectangle
@@ -33,6 +37,10 @@ Position :: enum {
 	Absolute,
 }
 
+On_Click :: struct {
+	callback: proc(data: rawptr),
+}
+
 Pos :: distinct rl.Vector2
 
 Size :: distinct rl.Vector2
@@ -42,6 +50,25 @@ Anchor :: distinct rl.Vector2
 find_trait :: proc {
 	find_trait_by_id,
 	find_trait_in,
+}
+
+get_all :: proc(
+	world: World,
+	entity_id: Entity_Id,
+	$Type: typeid,
+	allocator := context.allocator,
+) -> [dynamic]Type {
+	traits := get_traits(world, entity_id)
+
+	found := make([dynamic]Type, allocator)
+
+	for trait in traits {
+		if value, is_of_type := trait.(Type); is_of_type {
+			append(&found, value)
+		}
+	}
+
+	return found
 }
 
 find_trait_by_id :: proc(world: World, entity_id: Entity_Id, $Type: typeid) -> Maybe(Trait) {

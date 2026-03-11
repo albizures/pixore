@@ -9,7 +9,7 @@ import rl "vendor:raylib"
 
 draw_with_id :: proc(world: t.World, id: t.Entity_Id) {
 	entity := t.get_entity(world, id)
-	log.error("id", id)
+
 	draw_with_traits(world, entity.traits[:])
 }
 
@@ -30,10 +30,11 @@ draw_with_traits :: proc(world: t.World, traits: []t.Trait) {
 		     t.Parent2,
 		     t.Position,
 		     t.Anchor,
+		     t.On_Click,
 		     t.Is_Mouse_Interactive:
 		// ignore they don't do anything by themselves
 		case:
-			panic(fmt.tprintln("Trait not implemented:", trait))
+			panic(fmt.tprintln("Trait not implemented in the drawing:", trait))
 		}
 	}
 }
@@ -86,7 +87,6 @@ get_parent_offset :: proc(world: t.World, traits: []t.Trait) -> rl.Vector2 {
 	parent_id, has_parent := maybe_parent.?
 	if !has_parent {
 		if position == .Relative {
-			log.error(maybe_parent, traits)
 			panic("Child with relative position but without parent")
 		}
 
