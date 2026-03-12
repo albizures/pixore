@@ -4,8 +4,17 @@ import "../helpers"
 import "../traits"
 import rl "vendor:raylib"
 
+Event_Kind :: enum {
+	Color_Select,
+}
+
+Event_Header :: struct {
+	kind: Event_Kind,
+}
+
 On_Click :: struct {
-	callback: proc(data: rawptr),
+	payload:  rawptr,
+	callback: proc(raw_data: rawptr),
 }
 
 event_capturing :: proc(p: ^Pixore, id: traits.Entity, pos: rl.Vector2) {
@@ -35,6 +44,6 @@ event_capturing :: proc(p: ^Pixore, id: traits.Entity, pos: rl.Vector2) {
 	click, has_on_click := traits.get_trait(p.world, id, On_Click)
 
 	if has_on_click {
-		click.callback(nil)
+		click.callback(click.payload)
 	}
 }

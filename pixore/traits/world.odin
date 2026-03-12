@@ -8,8 +8,13 @@ World :: struct {
 	allocator: mem.Allocator,
 	stores:    map[typeid]^Store_Header,
 	counter:   Entity,
+	auto_load: bool,
 }
 
+Store_Config :: struct {
+	on_after_add:     proc(world: ^World, entity: Entity),
+	on_before_remove: proc(world: ^World, entity: Entity),
+}
 
 // An internal header to help us manage the raw dynamic arrays
 Store_Header :: struct {
@@ -19,6 +24,7 @@ Store_Header :: struct {
 	entities:  [dynamic]Entity,
 	sparse:    map[Entity]int,
 	type_size: int,
+	config:    Store_Config,
 }
 
 add :: proc {
@@ -35,10 +41,11 @@ get :: proc {
 	get_store,
 }
 
-make_world :: proc(allocator := context.allocator) -> World {
+make_world :: proc(allocator := context.allocator, auto_load := false) -> World {
 	return World {
 		allocator = allocator, //
 		stores    = make(map[typeid]^Store_Header, allocator),
+		auto_load = auto_load,
 	}
 }
 
@@ -60,8 +67,8 @@ destroy :: proc(world: ^World) {
 	}
 }
 
-// User-facing API to "register" a component type
-add_trait_to_world :: proc(world: ^World, $T: typeid) {
+// User-facing API to "add" a trait type
+add_trait_to_world :: proc(world: ^World, $T: typeid, config := Store_Config{}) {
 	store := new(Store_Header, world.allocator)
 
 	instances := new([dynamic]T, world.allocator)
@@ -70,6 +77,7 @@ add_trait_to_world :: proc(world: ^World, $T: typeid) {
 	store.type_size = size_of(T)
 	store.sparse = make(map[Entity]int, world.allocator)
 	store.entities = make([dynamic]Entity, world.allocator)
+	store.config = config
 
 	world.stores[T] = store
 }
@@ -80,6 +88,10 @@ remove :: proc(world: ^World, entity: Entity, $T: typeid) {
 
 	index, found := store.sparse[entity]
 	if !found do return // it's already been removed
+
+	if store.config.on_before_remove != nil {
+		store.config.on_before_remove(world, entity)
+	}
 
 	instances := (^[dynamic]T)(store.instances)
 	last_index := len(instances) - 1
@@ -104,6 +116,10 @@ add_trait_to_entity :: proc(world: ^World, entity: Entity, data: $T) {
 	store, has_store := world.stores[typeid_of(T)]
 
 	if !has_store {
+		if !world.auto_load {
+			panic("no store for trait and auto_load is false")
+		}
+
 		add_trait_to_world(world, T)
 		store = world.stores[typeid_of(T)]
 	}
@@ -114,6 +130,10 @@ add_trait_to_entity :: proc(world: ^World, entity: Entity, data: $T) {
 	append(instances, data)
 	append(&store.entities, entity)
 	store.sparse[entity] = len(instances) - 1
+
+	if store.config.on_after_add != nil {
+		store.config.on_after_add(world, entity)
+	}
 }
 
 

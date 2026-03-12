@@ -23,6 +23,7 @@ Pixore :: struct {
 	stop_requested: bool,
 	camera:         rl.Camera2D,
 	palette:        []rl.Color,
+	selected_color: uint,
 	canvas:         rl.RenderTexture2D,
 	resolution:     rl.Vector2,
 	color:          int,

@@ -14,9 +14,9 @@ Status :: enum {
 
 Palette_Grid :: struct {
 	cols:                    u8,
-	color_index:             int,
 	entity_id:               traits.Entity,
 	current_color_entity_id: traits.Entity,
+	color_entities:          [dynamic]traits.Entity,
 }
 
 Canvas :: struct {
@@ -208,8 +208,8 @@ COLOR_SIZE :: 12
 
 new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 	grid := Palette_Grid {
-		cols        = PALETTE_COLS,
-		color_index = 3,
+		cols           = PALETTE_COLS,
+		color_entities = make([dynamic]traits.Entity),
 	}
 
 	size: f32 = PALETTE_COLS * COLOR_SIZE
@@ -236,29 +236,34 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 		x, y := helpers.get_grid_cell(index, int(grid.cols))
 
 		entity_color_id := traits.make_entity(&p.world)
+
+		log.warn("--", index, entity_color_id)
+		append(&grid.color_entities, entity_color_id)
+
+		payload := new(Color_Select_Event)
+		payload.header.kind = Event_Kind.Color_Select
+		payload.pixore = p
+		payload.color_index = uint(index)
+
+		rect_x := f32(x * COLOR_SIZE)
+		rect_y := f32(y * COLOR_SIZE)
+		rect_width: f32 = COLOR_SIZE
+		rect_height: f32 = COLOR_SIZE
+
 		traits.add(
 			&p.world,
 			entity_color_id,
-			Pos {
-				x = f32(x * COLOR_SIZE),
-				y = f32(y * COLOR_SIZE),
-				width = COLOR_SIZE,
-				height = COLOR_SIZE,
-			},
+			Pos{x = rect_x, y = rect_y, width = rect_width, height = rect_height},
 			Position_Type.Relative,
 			Background{color = color},
-			On_Click {
-				callback = proc(so: rawptr) {
-					log.warn("clicked on color", so)
-				},
-			},
+			On_Click{callback = on_color_select, payload = rawptr(payload)},
 		)
 
-		if grid.color_index == index {
-			rect.x = f32(x * COLOR_SIZE)
-			rect.y = f32(y * COLOR_SIZE)
-			rect.width = COLOR_SIZE
-			rect.height = COLOR_SIZE
+		if p.selected_color == uint(index) {
+			rect.x = rect_x
+			rect.y = rect_y
+			rect.width = rect_width
+			rect.height = rect_height
 		}
 
 		add_child(&p.world, entity_id, entity_color_id)
@@ -279,4 +284,49 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 	grid.current_color_entity_id = primary_color_entity_id
 
 	return grid
+}
+
+on_color_select :: proc(data: rawptr) {
+	header := (^Event_Header)(data)
+	log.warn("click ", header)
+
+	if header.kind != Event_Kind.Color_Select {
+		return
+	}
+
+	event := (^Color_Select_Event)(data)
+
+
+	spritor := &event.pixore.spritor
+	world := &event.pixore.world
+	event.pixore.selected_color = event.color_index
+
+	entity_color_id := spritor.palette.color_entities[event.color_index]
+
+	target_pos := traits.expect_trait(
+		world^,
+		entity_color_id,
+		Pos,
+		"Missing position for current color entity",
+	)
+	dest_pos := traits.expect_trait(
+		world^,
+		spritor.palette.current_color_entity_id,
+		Pos,
+		"Missing position for current color entity",
+	)
+
+	log.warn("target", target_pos)
+
+	dest_pos.x = target_pos.x
+	dest_pos.y = target_pos.y
+	dest_pos.width = COLOR_SIZE
+	dest_pos.height = COLOR_SIZE
+
+}
+
+Color_Select_Event :: struct {
+	using header: Event_Header,
+	pixore:       ^Pixore,
+	color_index:  uint,
 }

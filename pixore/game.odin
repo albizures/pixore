@@ -15,13 +15,14 @@ create :: proc() -> internals.Pixore {
 	config := co.get_project_config()
 
 	pixore := internals.Pixore {
-		width      = config.width,
-		height     = config.height,
-		title      = config.title,
-		resolution = config.resolution,
-		palette    = config.palette,
-		sprite     = config.sprite,
-		spritor    = internals.new_spritor(),
+		width          = config.width,
+		height         = config.height,
+		title          = config.title,
+		resolution     = config.resolution,
+		palette        = config.palette,
+		sprite         = config.sprite,
+		spritor        = internals.new_spritor(),
+		selected_color = 0,
 	}
 
 	return pixore
@@ -76,9 +77,17 @@ init :: proc(pixore: ^internals.Pixore) {
 	rl.EndTextureMode()
 
 
-	pixore.world = traits.make_world(context.allocator)
+	pixore.world = traits.make_world(context.allocator, auto_load = true)
 	pixore.root_entity = traits.make_entity(&pixore.world)
-	traits.add(&pixore.world, internals.Pos)
+	traits.add(&pixore.world, internals.Children, traits.Store_Config {
+		on_before_remove = proc(world: ^traits.World, entity: traits.Entity) {
+			if children, ok := traits.get(world^, entity, internals.Children); ok {
+				free(&children.entities, children.allocator)
+			}
+		},
+	})
+
+
 	traits.add(
 		&pixore.world,
 		pixore.root_entity,
