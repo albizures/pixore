@@ -1,5 +1,6 @@
 package game
 
+import c "core:c"
 import "core:log"
 import p "pixore"
 import rl "vendor:raylib"
@@ -39,8 +40,13 @@ update :: proc(state: ^Game_State) {
 draw :: proc(state: Game_State) {
 	p.push()
 	defer p.pop()
+	p.cls(2)
 
-	p.cls(1)
+	// Get mouse position
+	pos := p.get_mouse_position()
+
+	p.circle(int(pos.x), int(pos.y), 3, -1)
+
 	p.circle(20, 20, 6, 2)
 	p.rect_fill(50, 50, 50, 50, 6)
 

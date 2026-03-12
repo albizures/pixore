@@ -1,5 +1,6 @@
 package pixore_internals
 
+import "../events"
 import "../helpers"
 import "../traits"
 import "core:log"
@@ -237,7 +238,6 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 
 		entity_color_id := traits.make_entity(&p.world)
 
-		log.warn("--", index, entity_color_id)
 		append(&grid.color_entities, entity_color_id)
 
 		payload := new(Color_Select_Event)
@@ -256,7 +256,7 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 			Pos{x = rect_x, y = rect_y, width = rect_width, height = rect_height},
 			Position_Type.Relative,
 			Background{color = color},
-			On_Click{callback = on_color_select, payload = rawptr(payload)},
+			On_Click{callback = on_color_click, payload = rawptr(payload)},
 		)
 
 		if p.selected_color == index {
@@ -286,35 +286,35 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 	return grid
 }
 
-on_color_select :: proc(data: rawptr) {
-	event := (^Color_Select_Event)(data)
+get_entity_color_id :: proc(p: Pixore, color_index: int) -> traits.Entity {
+	return p.spritor.palette.color_entities[color_index]
+}
 
-	spritor := &event.pixore.spritor
-	world := &event.pixore.world
-	event.pixore.selected_color = event.color_index
+sync_selected_color :: proc(event: Color_Change) {
+	p := event.pixore
 
-	entity_color_id := spritor.palette.color_entities[event.color_index]
+	entity_id := get_entity_color_id(p^, p.selected_color)
+	current_color_entity_id := p.spritor.palette.current_color_entity_id
 
-	target_pos := traits.expect_trait(
-		world^,
-		entity_color_id,
-		Pos,
-		"Missing position for current color entity",
-	)
+	target_pos := traits.expect_trait(p.world, entity_id, Pos, "Missing position in color entity")
 	dest_pos := traits.expect_trait(
-		world^,
-		spritor.palette.current_color_entity_id,
+		p.world,
+		current_color_entity_id,
 		Pos,
-		"Missing position for current color entity",
+		"Missing position in current color entity",
 	)
-
-	log.warn("target", target_pos)
 
 	dest_pos.x = target_pos.x
 	dest_pos.y = target_pos.y
 	dest_pos.width = COLOR_SIZE
 	dest_pos.height = COLOR_SIZE
+}
 
+on_color_click :: proc(data: rawptr) {
+	event := (^Color_Select_Event)(data)
+	p := event.pixore
+
+	events.fire(p.dispatcher, Color_Change{pixore = p, index = event.color_index})
 }
 
 Color_Select_Event :: struct {

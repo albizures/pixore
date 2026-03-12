@@ -18,7 +18,7 @@ create :: proc() -> internals.Pixore {
 		palette        = config.palette,
 		sprite         = config.sprite,
 		spritor        = internals.new_spritor(),
-		selected_color = 0,
+		selected_color = 1,
 	}
 
 	return pixore
@@ -53,3 +53,10 @@ cls :: internals.cls
 
 // sprites
 spr :: internals.spr
+
+
+// input
+get_mouse_position :: internals.get_mouse_position
+is_mouse_pressed :: internals.is_mouse_pressed
+is_key_pressed :: internals.is_key_pressed
+is_key_pressed_again :: internals.is_key_pressed_again

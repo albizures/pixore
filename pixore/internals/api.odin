@@ -77,7 +77,6 @@ cls :: proc(id: int = -1) {
 	rl.ClearBackground(get_color(id))
 }
 
-
 push :: proc() {
 	gl.PushMatrix()
 }

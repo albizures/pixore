@@ -1,5 +1,6 @@
 package pixore_internals
 
+import "../events"
 import "../helpers"
 import "../traits"
 import "core:c"
@@ -34,6 +35,7 @@ Pixore :: struct {
 	spritor:        Spritor,
 	world:          traits.World,
 	root_entity:    traits.Entity,
+	dispatcher:     events.Dispatcher,
 }
 
 
@@ -87,6 +89,17 @@ init :: proc(pixore: ^Pixore) {
 		pixore.root_entity,
 		Pos{rect = {0, 0, pixore.resolution.x, pixore.resolution.y}},
 	)
+
+	pixore.dispatcher = events.create(context.allocator)
+
+	events.on(&pixore.dispatcher, Color_Change, update_selected_color)
+	events.on(&pixore.dispatcher, Color_Change, sync_selected_color)
+}
+
+update_selected_color :: proc(event: Color_Change) {
+	p := event.pixore
+
+	p.selected_color = event.index
 }
 
 start :: proc(
