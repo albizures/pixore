@@ -15,7 +15,7 @@ get_color :: proc(id: int = -1) -> rl.Color {
 		id = -1
 	}
 
-	id = id if id != -1 else p.color
+	id = id if id != -1 else p.selected_color
 
 	color := p.palette[id]
 

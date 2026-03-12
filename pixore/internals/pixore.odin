@@ -1,6 +1,9 @@
 package pixore_internals
 
+import "../helpers"
 import "../traits"
+import "core:c"
+import "core:strings"
 import rl "vendor:raylib"
 
 Sprite :: struct {
@@ -23,16 +26,128 @@ Pixore :: struct {
 	stop_requested: bool,
 	camera:         rl.Camera2D,
 	palette:        []rl.Color,
-	selected_color: uint,
+	selected_color: int,
 	canvas:         rl.RenderTexture2D,
 	resolution:     rl.Vector2,
-	color:          int,
 	sprite:         Sprite,
 	sprite_texture: rl.RenderTexture2D,
 	spritor:        Spritor,
 	world:          traits.World,
 	root_entity:    traits.Entity,
 }
+
+
+init :: proc(pixore: ^Pixore) {
+	rl.SetConfigFlags({.WINDOW_RESIZABLE})
+	rl.InitWindow(
+		c.int(pixore.width),
+		c.int(pixore.height),
+		strings.clone_to_cstring(pixore.title),
+	)
+	rl.SetTargetFPS(60)
+
+	res_x := i32(pixore.resolution.x)
+	res_y := i32(pixore.resolution.y)
+	assert(res_x > 0, "resolution height is zero")
+	assert(res_y > 0, "resolution height is zero")
+
+	pixore.camera.zoom = 1
+	pixore.sprite_texture = rl.LoadRenderTexture(pixore.sprite.size, pixore.sprite.size)
+	rl.SetTextureFilter(pixore.sprite_texture.texture, .POINT)
+
+	pixore.canvas = rl.LoadRenderTexture(res_x, res_y)
+	rl.SetTextureFilter(pixore.canvas.texture, .POINT)
+
+	context.user_ptr = pixore
+
+	// render the sprite
+	cols := int(pixore.sprite.size)
+	rl.BeginTextureMode(pixore.sprite_texture)
+	for value, index in pixore.sprite.data {
+		x, y := helpers.get_grid_cell(index, cols)
+
+		rl.DrawPixelV({f32(x), f32(y)}, get_color(int(value)))
+	}
+	rl.EndTextureMode()
+
+
+	pixore.world = traits.make_world(context.allocator, auto_load = true)
+	pixore.root_entity = traits.make_entity(&pixore.world)
+	traits.add(&pixore.world, Children, traits.Store_Config {
+		on_before_remove = proc(world: ^traits.World, entity: traits.Entity) {
+			if children, ok := traits.get(world^, entity, Children); ok {
+				free(&children.entities, children.allocator)
+			}
+		},
+	})
+
+
+	traits.add(
+		&pixore.world,
+		pixore.root_entity,
+		Pos{rect = {0, 0, pixore.resolution.x, pixore.resolution.y}},
+	)
+}
+
+start :: proc(
+	pixore: ^Pixore,
+	state: ^$State,
+	draw: proc(state: State),
+	update: proc(state: ^State),
+) {
+	init(pixore)
+
+	context.user_ptr = pixore
+
+	for !pixore.stop_requested {
+		final_size, margin := get_real_size(pixore^)
+		if rl.WindowShouldClose() {
+			pixore.stop_requested = true
+		}
+		update(state)
+		update_entities(pixore)
+
+		// start drawing canvas
+		rl.BeginTextureMode(pixore.canvas)
+		rl.BeginMode2D(pixore.camera)
+
+		// /* */rl.DrawFPS(0, 0)
+		/* */draw(state^)
+		draw_spritor(pixore^)
+
+		// end drawing canvas
+		rl.EndMode2D()
+		rl.EndTextureMode()
+
+		// draw canvas
+		rl.BeginDrawing()
+		rl.ClearBackground(rl.DARKGRAY)
+		rl.DrawTexturePro(
+			pixore.canvas.texture,
+			{0, 0, f32(pixore.canvas.texture.width), f32(-pixore.canvas.texture.height)}, // Source (flip Y because OpenGL)
+			{margin.x, margin.y, final_size, final_size},
+			{0, 0},
+			0,
+			rl.WHITE,
+		)
+		rl.EndDrawing()
+
+		free_all(context.temp_allocator)
+	}
+
+	rl.UnloadTexture(pixore.canvas.texture)
+	rl.CloseWindow()
+}
+
+stop :: proc() {
+	p := (^Pixore)(context.user_ptr)
+	p.stop_requested = true
+}
+
+update_entities :: proc(pixore: ^Pixore) {
+	update_spritor(pixore)
+}
+
 
 PALETTE_CODES := [?]rune {
 	'o',

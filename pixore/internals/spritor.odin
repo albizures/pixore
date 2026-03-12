@@ -243,7 +243,7 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 		payload := new(Color_Select_Event)
 		payload.header.kind = Event_Kind.Color_Select
 		payload.pixore = p
-		payload.color_index = uint(index)
+		payload.color_index = index
 
 		rect_x := f32(x * COLOR_SIZE)
 		rect_y := f32(y * COLOR_SIZE)
@@ -259,7 +259,7 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 			On_Click{callback = on_color_select, payload = rawptr(payload)},
 		)
 
-		if p.selected_color == uint(index) {
+		if p.selected_color == index {
 			rect.x = rect_x
 			rect.y = rect_y
 			rect.width = rect_width
@@ -287,15 +287,7 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 }
 
 on_color_select :: proc(data: rawptr) {
-	header := (^Event_Header)(data)
-	log.warn("click ", header)
-
-	if header.kind != Event_Kind.Color_Select {
-		return
-	}
-
 	event := (^Color_Select_Event)(data)
-
 
 	spritor := &event.pixore.spritor
 	world := &event.pixore.world
@@ -328,5 +320,5 @@ on_color_select :: proc(data: rawptr) {
 Color_Select_Event :: struct {
 	using header: Event_Header,
 	pixore:       ^Pixore,
-	color_index:  uint,
+	color_index:  int,
 }

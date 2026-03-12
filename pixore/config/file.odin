@@ -170,3 +170,18 @@ create_default_palette :: proc() -> []rl.Color {
 
 	return colors[:]
 }
+
+
+save :: proc(p: internals.Pixore) {
+	log.info("Saving game")
+	save_project_config(
+		{
+			width = p.width,
+			height = p.height,
+			title = p.title,
+			resolution = p.resolution,
+			palette = p.palette,
+			sprite = p.sprite,
+		},
+	)
+}
