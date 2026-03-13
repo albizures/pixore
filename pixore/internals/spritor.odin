@@ -7,6 +7,8 @@ import "core:log"
 import "core:mem"
 import rl "vendor:raylib"
 
+SPRITOR_ARENA_SIZE: int = 1 * mem.Kilobyte
+
 Status :: enum {
 	Uninitialized,
 	Closed,
@@ -49,7 +51,7 @@ init_spritor :: proc(p: ^Pixore) {
 
 	// maybe it's a good idea to check the size of the palette,
 	// since currently it's the only child that can grow.
-	backing_buffer, err := mem.alloc_bytes(50 * mem.Kilobyte)
+	backing_buffer, err := mem.alloc_bytes(SPRITOR_ARENA_SIZE)
 	if err != nil {
 		panic("Unable to allocate memory for the spritior")
 	}
@@ -57,7 +59,6 @@ init_spritor :: proc(p: ^Pixore) {
 	mem.arena_init(&p.spritor.arena, backing_buffer)
 	spritor.allocator = mem.arena_allocator(&spritor.arena)
 
-	// spritor.traits = make([dynamic]traits.Trait, spritor.allocator)
 	canvas := new_canvas(p)
 	palette := new_palette_grid(p)
 
@@ -65,7 +66,7 @@ init_spritor :: proc(p: ^Pixore) {
 
 	PADDING_TWO := PADDING * 2
 
-	spritor.entity_id = traits.make_entity(&p.world)
+	spritor.entity_id = traits.create(&p.world)
 	traits.add(
 		&p.world,
 		spritor.entity_id,
@@ -104,7 +105,7 @@ close_spritor :: proc(p: ^Pixore) {
 
 	used_space := spritor.arena.offset
 	remaining := len(spritor.arena.data) - spritor.arena.offset
-	log.warn("Used space: %d, Remaining space: %d", used_space, remaining)
+	log.warnf("Used space: %d, Remaining space: %d", used_space, remaining)
 }
 
 uninit_spritor :: proc(spritor: ^Spritor) {
@@ -189,7 +190,7 @@ new_canvas :: proc(p: ^Pixore) -> Canvas {
 		offset = {0, 0},
 	}
 
-	entity_id := traits.make_entity(&p.world)
+	entity_id := traits.create(&p.world)
 	traits.add(
 		&p.world,
 		entity_id,
@@ -210,11 +211,11 @@ COLOR_SIZE :: 12
 new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 	grid := Palette_Grid {
 		cols           = PALETTE_COLS,
-		color_entities = make([dynamic]traits.Entity),
+		color_entities = make([dynamic]traits.Entity, p.spritor.allocator),
 	}
 
 	size: f32 = PALETTE_COLS * COLOR_SIZE
-	entity_id := traits.make_entity(&p.world)
+	entity_id := traits.create(&p.world)
 
 	traits.add(
 		&p.world,
@@ -236,7 +237,7 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 	for color, index in p.palette {
 		x, y := helpers.get_grid_cell(index, int(grid.cols))
 
-		entity_color_id := traits.make_entity(&p.world)
+		entity_color_id := traits.create(&p.world)
 
 		append(&grid.color_entities, entity_color_id)
 
@@ -269,7 +270,7 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 		add_child(&p.world, entity_id, entity_color_id)
 	}
 
-	primary_color_entity_id := traits.make_entity(&p.world)
+	primary_color_entity_id := traits.create(&p.world)
 	traits.add(
 		&p.world,
 		primary_color_entity_id,

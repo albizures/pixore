@@ -73,8 +73,8 @@ init :: proc(pixore: ^Pixore) {
 	rl.EndTextureMode()
 
 
-	pixore.world = traits.make_world(context.allocator, auto_load = true)
-	pixore.root_entity = traits.make_entity(&pixore.world)
+	pixore.world = traits.create(context.allocator, auto_load = true)
+	pixore.root_entity = traits.create(&pixore.world)
 	traits.add(&pixore.world, Children, traits.Store_Config {
 		on_before_remove = proc(world: ^traits.World, entity: traits.Entity) {
 			if children, ok := traits.get(world^, entity, Children); ok {

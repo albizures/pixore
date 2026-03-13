@@ -41,7 +41,12 @@ get :: proc {
 	get_store,
 }
 
-make_world :: proc(allocator := context.allocator, auto_load := false) -> World {
+create :: proc {
+	create_world,
+	create_entity,
+}
+
+create_world :: proc(allocator := context.allocator, auto_load := false) -> World {
 	return World {
 		allocator = allocator, //
 		stores    = make(map[typeid]^Store_Header, allocator),
@@ -49,7 +54,7 @@ make_world :: proc(allocator := context.allocator, auto_load := false) -> World 
 	}
 }
 
-make_entity :: proc(world: ^World) -> Entity {
+create_entity :: proc(world: ^World) -> Entity {
 	id := world.counter
 	world.counter += 1
 

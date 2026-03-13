@@ -14,7 +14,7 @@ Velocity :: struct {
 
 @(test)
 test_add_trait_to_world :: proc(t: ^testing.T) {
-	world := traits.make_world(context.temp_allocator)
+	world := traits.create(context.temp_allocator)
 	defer traits.destroy(&world)
 
 	traits.add(&world, Position)
@@ -35,7 +35,7 @@ test_add_trait_to_world :: proc(t: ^testing.T) {
 
 @(test)
 test_add_trait_to_entity :: proc(t: ^testing.T) {
-	world := traits.make_world(context.temp_allocator)
+	world := traits.create(context.temp_allocator)
 	defer traits.destroy(&world)
 
 	traits.add(&world, Position)
@@ -72,7 +72,7 @@ test_add_trait_to_entity :: proc(t: ^testing.T) {
 
 @(test)
 test_get_trait :: proc(t: ^testing.T) {
-	world := traits.make_world(context.temp_allocator)
+	world := traits.create(context.temp_allocator)
 	defer traits.destroy(&world)
 
 	traits.add(&world, Position)
@@ -114,7 +114,7 @@ test_get_trait :: proc(t: ^testing.T) {
 
 @(test)
 test_remove_trait :: proc(t: ^testing.T) {
-	world := traits.make_world(context.temp_allocator)
+	world := traits.create(context.temp_allocator)
 	defer traits.destroy(&world)
 
 	traits.add(&world, Position)

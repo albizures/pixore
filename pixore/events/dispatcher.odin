@@ -30,7 +30,6 @@ on :: proc(dispatcher: ^Dispatcher, $Data: typeid, listener: proc(data: Data)) {
 		store = new(Store, dispatcher.allocator)
 		store.listeners = rawptr(listeners)
 
-		log.error("no listeners for event type: ", store)
 		dispatcher.stores[Data] = store
 	}
 	listeners := (^[dynamic]proc(data: Data))(store.listeners)
