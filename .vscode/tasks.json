@@ -4,21 +4,21 @@
     {
       "label": "build-project",
       "type": "shell",
-      "command": "odin build .. -debug -out:test_bin",
+      "command": "odin build .. -debug -out:pixore_bin",
       "options": {
-        "cwd": "${workspaceFolder}/.build"
+        "cwd": "${workspaceFolder}/.build",
       },
       "dependsOn": [
         "mkdir-build-dir"
       ],
       "group": "build",
-      "problemMatcher": []
+      "problemMatcher": [],
     },
     {
       "type": "shell",
       "label": "mkdir-build-dir",
       "command": "mkdir -p .build",
       "group": "build",
-    }
-  ]
+    },
+  ],
 }

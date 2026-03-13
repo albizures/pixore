@@ -1,34 +1,16 @@
 package pixore
 
+import "common"
 import co "config"
 import "core:log"
 import "internals"
-
-
-create :: proc() -> internals.Pixore {
-	log.info("Creating pixore game")
-
-	config := co.get_project_config()
-
-	pixore := internals.Pixore {
-		width          = config.width,
-		height         = config.height,
-		title          = config.title,
-		resolution     = config.resolution,
-		palette        = config.palette,
-		sprite         = config.sprite,
-		spritor        = internals.new_spritor(),
-		selected_color = 1,
-	}
-
-	return pixore
-}
 
 
 // core
 start :: internals.start
 stop :: internals.stop
 save :: co.save
+create :: internals.create
 
 // colors
 get_color :: internals.get_color

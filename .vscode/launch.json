@@ -8,10 +8,10 @@
       "name": "Debug",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/.build/test_bin",
+      "program": "${workspaceFolder}/.build/pixore_bin",
       "args": [],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "build-project"
-    }
-  ]
+    },
+  ],
 }

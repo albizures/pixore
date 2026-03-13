@@ -2,6 +2,7 @@ package pixore_internals
 
 import "../helpers"
 import t "../traits"
+import "core:log"
 import rl "vendor:raylib"
 
 

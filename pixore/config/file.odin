@@ -1,14 +1,19 @@
 package config
 
-import "../internals"
+import "../common"
+import "../helpers"
+import "../palette"
 import "core:c"
 import "core:fmt"
 import "core:log"
+import "core:mem"
 import "core:os"
 import "core:strings"
 import rl "vendor:raylib"
 
-get_project_config :: proc() -> internals.Config {
+CONFIG_ARENA_SIZE := 20 * mem.Kilobyte
+
+get_project_config :: proc() -> common.Config {
 	bytes, file_error := os.read_entire_file("config.pixore", context.temp_allocator)
 	// defer delete(bytes) // this gives 'pointer being freed was not allocated', not sure why
 	if file_error != nil {
@@ -22,24 +27,27 @@ get_project_config :: proc() -> internals.Config {
 	parse(&parser)
 
 	assert(len(parser.errors) == 0, "There are syntax errors in the project file")
-
-	title := get_string_value(parser.values, "title")
-	width := get_uint_value(parser.values, "width")
-	height := get_uint_value(parser.values, "height")
-	res_x := get_uint_value(parser.values, "res_x")
-	res_y := get_uint_value(parser.values, "res_y")
-	palette := get_palette(get_array_value(parser.values, "palette"))
-	sprite_size := get_i32_value(parser.values, "sprite_size")
-	sprite_data := get_sprite(get_string_value(parser.values, "sprite"))
-
-	return internals.Config {
-		title = title,
-		width = width,
-		height = height,
-		resolution = {f32(res_x), f32(res_y)},
-		palette = palette,
-		sprite = {data = sprite_data, size = sprite_size},
+	config: common.Config = {
+		title = get_string_value(parser.values, "title"),
+		window_size = {
+			f32(get_uint_value(parser.values, "width")),
+			f32(get_uint_value(parser.values, "height")),
+		},
+		screen_size = {
+			f32(get_uint_value(parser.values, "res_x")),
+			f32(get_uint_value(parser.values, "res_y")),
+		},
+		sprite = {size = get_u16_value(parser.values, "sprite_size")},
 	}
+
+	helpers.init_arena(&config, CONFIG_ARENA_SIZE)
+
+	config.palette = get_palette(get_array_value(parser.values, "palette"), config.allocator)
+	config.sprite.data = get_sprite(get_string_value(parser.values, "sprite"), config.allocator)
+
+	helpers.print_remaining(&config, "config")
+
+	return config
 }
 
 get_string_value :: proc(values: map[string]ConfigValue, name: string) -> string {
@@ -60,13 +68,13 @@ get_uint_value :: proc(values: map[string]ConfigValue, name: string) -> uint {
 	return real_value
 }
 
-get_i32_value :: proc(values: map[string]ConfigValue, name: string) -> i32 {
+get_u16_value :: proc(values: map[string]ConfigValue, name: string) -> u16 {
 	value, exists := values[name]
 	assert(exists, fmt.tprint("Missing value for:", name))
 	real_value, is_valid := value.(uint)
 	assert(is_valid, fmt.tprint("Value for \"", name, "\" is not a number"))
 
-	return i32(real_value)
+	return u16(real_value)
 }
 
 get_array_value :: proc(values: map[string]ConfigValue, name: string) -> []Value {
@@ -79,8 +87,8 @@ get_array_value :: proc(values: map[string]ConfigValue, name: string) -> []Value
 	return colors[:]
 }
 
-get_palette :: proc(colors: []Value) -> []rl.Color {
-	palette := make([dynamic]rl.Color)
+get_palette :: proc(colors: []Value, allocator: mem.Allocator) -> [dynamic]rl.Color {
+	palette := make([dynamic]rl.Color, 0, len(colors), allocator)
 
 	for maybe_color in colors {
 		switch color in maybe_color {
@@ -90,16 +98,17 @@ get_palette :: proc(colors: []Value) -> []rl.Color {
 		}
 	}
 
-	return palette[:]
+	return palette
 }
-get_sprite :: proc(sprite: string) -> [dynamic]uint {
-	sprite, replaceOk := strings.replace_all(sprite, "\n", "", context.allocator)
+
+get_sprite :: proc(sprite: string, allocator: mem.Allocator) -> [dynamic]u8 {
+	sprite, replaceOk := strings.replace_all(sprite, "\n", "", context.temp_allocator)
 	defer delete(sprite)
 	assert(replaceOk, "unable to replace enter by spaces")
 
-	values := make([dynamic]uint)
+	values, allocator_error := make([dynamic]u8, 0, len(sprite), allocator)
 
-	codes := internals.palette_codes_to_map()
+	codes := palette.palette_codes_to_map()
 
 	for r in sprite {
 		value, ok := codes[r]
@@ -112,27 +121,32 @@ get_sprite :: proc(sprite: string) -> [dynamic]uint {
 }
 
 
-create_project_config :: proc() -> internals.Config {
-	sprite_default_size: i32 = 128
+create_project_config :: proc() -> common.Config {
+	sprite_default_size: u16 = 128
 	// TODO update this proc to ask for the values instead of using defaults
-	config := internals.Config {
-		width = 800,
-		height = 500,
+	config := common.Config {
 		title = "My Odin Game",
-		resolution = {128, 128},
-		palette = create_default_palette(),
-		sprite = {
-			data = make([dynamic]uint, sprite_default_size * sprite_default_size),
-			size = sprite_default_size,
-		},
+		window_size = {800, 500},
+		screen_size = {128, 128},
+		sprite = {size = sprite_default_size},
 	}
+
+	helpers.init_arena(&config, CONFIG_ARENA_SIZE)
+
+	config.palette = palette.create_default_palette(config.allocator)
+	config.sprite.data = make(
+		[dynamic]u8,
+		0,
+		sprite_default_size * sprite_default_size,
+		config.allocator,
+	)
 
 	save_project_config(config)
 
 	return config
 }
 
-save_project_config :: proc(config: internals.Config) {
+save_project_config :: proc(config: common.Config) {
 	str := serialize(config, context.allocator)
 	defer delete(str)
 
@@ -148,40 +162,19 @@ save_project_config :: proc(config: internals.Config) {
 }
 
 
-create_default_palette :: proc() -> []rl.Color {
-	colors := make([]rl.Color, 16)
-	colors[0] = {0, 0, 0, 0}
-	colors[1] = {29, 43, 83, 255}
-	// colors[2] = rl.BLACK //{126, 37, 83, 255}
-	colors[2] = {126, 37, 83, 255}
-	colors[3] = {0, 135, 81, 255}
-	colors[4] = {171, 82, 54, 255}
-	colors[5] = {95, 87, 79, 255}
-	colors[6] = {194, 195, 199, 255}
-	colors[7] = {255, 241, 232, 255}
-	colors[8] = {255, 0, 77, 255}
-	colors[9] = {255, 163, 0, 255}
-	colors[10] = {255, 236, 39, 255}
-	colors[11] = {0, 228, 54, 255}
-	colors[12] = {41, 173, 255, 255}
-	colors[13] = {131, 118, 156, 255}
-	colors[14] = {255, 119, 168, 255}
-	colors[15] = {255, 204, 170, 255}
+save :: proc(p: common.Pixore) {
+	log.info("Saving game")
 
-	return colors[:]
+
+	assert(len(p.resources.palette) == len(p.config.palette), "palette length mismatch")
+	copy(p.resources.palette[:], p.config.palette[:])
+	copy(p.resources.sprite.data[:], p.config.sprite.data[:])
+
+	// TODO: add other things which can be updated
+
+	save_project_config(p.config)
 }
 
-
-save :: proc(p: internals.Pixore) {
-	log.info("Saving game")
-	save_project_config(
-		{
-			width = p.width,
-			height = p.height,
-			title = p.title,
-			resolution = p.resolution,
-			palette = p.palette,
-			sprite = p.sprite,
-		},
-	)
+destroy :: proc(config: ^common.Config) {
+	mem.arena_free_all(&config.core_arena)
 }

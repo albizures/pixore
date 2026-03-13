@@ -1,5 +1,6 @@
 package pixore_internals
 
+import "../common"
 import "../events"
 import "../helpers"
 import "../traits"
@@ -8,114 +9,75 @@ import "core:mem"
 import rl "vendor:raylib"
 
 SPRITOR_ARENA_SIZE: int = 1 * mem.Kilobyte
-
-Status :: enum {
-	Uninitialized,
-	Closed,
-	Open,
-}
-
-Palette_Grid :: struct {
-	cols:                    u8,
-	entity_id:               traits.Entity,
-	current_color_entity_id: traits.Entity,
-	color_entities:          [dynamic]traits.Entity,
-}
-
-Canvas :: struct {
-	// the scale of the sprite
-	scale:     int,
-	// the offset of the canvas from the top-left corner of the window
-	offset:    rl.Vector2,
-	entity_id: traits.Entity,
-}
-
-
-// spritor is the union of sprite and editor together 😉
-Spritor :: struct {
-	arena:            mem.Arena,
-	allocator:        mem.Allocator,
-	status:           Status,
-	last_press_time:  f64,
-	// the time between two interactions to be considered a double click
-	limit_press_rate: f64,
-	canvas:           Canvas,
-	palette:          Palette_Grid,
-	entity_id:        traits.Entity,
-}
-
 PADDING: f32 : 2
+PALETTE_COLS :: 4
+COLOR_SIZE :: 12
+
+Editor_Status :: common.Editor_Status
+Spritor :: common.Spritor
 
 init_spritor :: proc(p: ^Pixore) {
-	spritor := &p.spritor
+	spritor := &p.editors.spritor
 
-	// maybe it's a good idea to check the size of the palette,
-	// since currently it's the only child that can grow.
-	backing_buffer, err := mem.alloc_bytes(SPRITOR_ARENA_SIZE)
-	if err != nil {
-		panic("Unable to allocate memory for the spritior")
-	}
-
-	mem.arena_init(&p.spritor.arena, backing_buffer)
-	spritor.allocator = mem.arena_allocator(&spritor.arena)
-
-	canvas := new_canvas(p)
-	palette := new_palette_grid(p)
+	helpers.init_arena(spritor, SPRITOR_ARENA_SIZE)
+	defer helpers.print_remaining(&p.systems, "systems")
+	defer helpers.print_remaining(spritor, "spritor")
 
 	win_x, win_y := win_size()
 
 	PADDING_TWO := PADDING * 2
-
-	spritor.entity_id = traits.create(&p.world)
+	spritor.columns = PALETTE_COLS
+	spritor.canvas_id = new_canvas(p)
+	palette_id := new_palette_grid(p)
+	spritor.spritor_id = traits.create(&p.systems.world)
 	traits.add(
-		&p.world,
-		spritor.entity_id,
+		&p.systems.world,
+		spritor.spritor_id,
 		Pos{rect = {PADDING, PADDING, f32(win_x) - PADDING_TWO, f32(win_y) - PADDING_TWO}},
 		Background{color = rl.BEIGE},
 		Border{color = rl.BLACK, width = 1, kind = .Outside, direction = .Full},
 	)
 
-	add_child(&p.world, spritor.entity_id, canvas.entity_id, palette.entity_id)
+	add_child(&p.systems.world, spritor.spritor_id, spritor.canvas_id, palette_id)
 
-	spritor.canvas = canvas
-	spritor.palette = palette
+	spritor.scale = 8
+	spritor.offset = {0, 0}
 
-	add_child(&p.world, p.root_entity, spritor.entity_id)
+	add_child(&p.systems.world, p.systems.root_entity, spritor.spritor_id)
 
-	log.info("Spritor id", spritor.entity_id)
-	log.info("Palette id", palette.entity_id)
-	log.info("Canvas id", canvas.entity_id)
+	log.info("Spritor id", spritor.spritor_id)
+	log.info("Canvas id", spritor.canvas_id)
+	log.info("Current color id", spritor.current_color_id)
+	log.info("Color entities", spritor.color_entities)
 }
 
-new_spritor :: proc() -> Spritor {
+create_spritor :: proc() -> Spritor {
 	return Spritor{limit_press_rate = 0.25}
 }
 
 open_spritor :: proc(p: ^Pixore) {
-	if p.spritor.status == .Uninitialized {
+	if p.editors.spritor.status == .Uninitialized {
 		init_spritor(p)
 	}
 
-	p.spritor.status = .Open
+	p.editors.spritor.status = .Open
 }
 
 close_spritor :: proc(p: ^Pixore) {
-	spritor := &p.spritor
+	spritor := &p.editors.spritor
 	spritor.status = .Closed
 
-	used_space := spritor.arena.offset
-	remaining := len(spritor.arena.data) - spritor.arena.offset
-	log.warnf("Used space: %d, Remaining space: %d", used_space, remaining)
+	helpers.print_remaining(spritor, "spritor")
 }
 
 uninit_spritor :: proc(spritor: ^Spritor) {
 	spritor.status = .Uninitialized
 
-	mem.arena_free_all(&spritor.arena)
+	mem.arena_free_all(&spritor.arena.core_arena)
 }
 
 update_spritor :: proc(p: ^Pixore) {
-	spritor := &p.spritor
+	spritor := &p.editors.spritor
 	if is_key_pressed(.PERIOD) {
 		current_time := rl.GetTime()
 
@@ -133,66 +95,65 @@ update_spritor :: proc(p: ^Pixore) {
 	}
 
 	if spritor.status == .Open {
-
 		rect := traits.expect_trait(
-			p.world,
-			spritor.entity_id,
+			p.systems.world,
+			spritor.spritor_id,
 			Pos,
-			"Spritor is missng a position",
+			"Spritor is missing a position",
 		)
 
 		if is_mouse_pressed(.LEFT) && rl.CheckCollisionPointRec(get_mouse_position(), rect) {
-			event_capturing(p, spritor.entity_id, get_mouse_position())
+			event_capturing(p, spritor.spritor_id, get_mouse_position())
 		}
 	}
 }
 
 draw_spritor :: proc(p: Pixore) {
-	if p.spritor.status != .Open {
+	if p.editors.spritor.status != .Open {
 		return
 	}
 
-	draw_with_traits(p.world, p.spritor.entity_id)
-	draw_canvas(p, p.spritor.canvas)
+	draw_with_traits(p.systems.world, p.editors.spritor.spritor_id)
+	draw_canvas(p, p.editors.spritor)
 }
 
-draw_canvas :: proc(p: Pixore, canvas: Canvas) {
-	offset := get_parent_offset(p.world, canvas.entity_id)
-	rect := traits.expect_trait(p.world, canvas.entity_id, Pos, "Canvas is missing a position")
+draw_canvas :: proc(p: Pixore, spritor: Spritor) {
+	offset := get_parent_offset(p.systems.world, spritor.canvas_id)
+	rect := traits.expect_trait(
+		p.systems.world,
+		spritor.canvas_id,
+		Pos,
+		"Canvas is missing a position",
+	)
 
 	helpers.add_rect_to_vec(rect, &offset)
 
 	pixel := rl.Rectangle {
-		width  = f32(canvas.scale),
-		height = f32(canvas.scale),
+		width  = f32(spritor.scale),
+		height = f32(spritor.scale),
 	}
 
-	size := f32(p.sprite.size) / f32(canvas.scale)
-	limit: rl.Vector2 = canvas.offset + f32(canvas.scale)
-	start := int(helpers.get_grid_index(canvas.offset.x, canvas.offset.y, size))
+	size := f32(p.resources.sprite.size) / f32(spritor.scale)
+	limit := spritor.offset + f32(spritor.scale)
+	start := int(helpers.get_grid_index(spritor.offset.x, spritor.offset.y, size))
 	end := int(helpers.get_grid_index(limit.x, limit.y, size))
 
-	for color_index, index in p.sprite.data[start:end] {
+	for color_index, index in p.resources.sprite.data[start:end] {
 		color := get_color(int(color_index))
 
-		x, y := helpers.get_grid_cell(index, int(p.sprite.size))
+		x, y := helpers.get_grid_cell(index, int(p.resources.sprite.size))
 
-		pixel.x = f32(x * canvas.scale) + offset.x
-		pixel.y = f32(y * canvas.scale) + offset.y
+		pixel.x = f32(x * spritor.scale) + offset.x
+		pixel.y = f32(y * spritor.scale) + offset.y
 
 		rl.DrawRectangleRec(pixel, color)
 	}
 }
 
-new_canvas :: proc(p: ^Pixore) -> Canvas {
-	canvas := Canvas {
-		scale  = 8,
-		offset = {0, 0},
-	}
-
-	entity_id := traits.create(&p.world)
+new_canvas :: proc(p: ^Pixore) -> traits.Entity {
+	entity_id := traits.create(&p.systems.world)
 	traits.add(
-		&p.world,
+		&p.systems.world,
 		entity_id,
 		Pos{x = 2, y = 2, width = 64, height = 64},
 		Position_Type.Relative,
@@ -200,25 +161,23 @@ new_canvas :: proc(p: ^Pixore) -> Canvas {
 		Background{color = rl.BROWN},
 	)
 
-	canvas.entity_id = entity_id
-
-	return canvas
+	return entity_id
 }
 
-PALETTE_COLS :: 4
-COLOR_SIZE :: 12
 
-new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
-	grid := Palette_Grid {
-		cols           = PALETTE_COLS,
-		color_entities = make([dynamic]traits.Entity, p.spritor.allocator),
-	}
-
+new_palette_grid :: proc(p: ^Pixore) -> traits.Entity {
+	spritor := &p.editors.spritor
+	spritor.color_entities = make(
+		[dynamic]traits.Entity,
+		0,
+		len(p.resources.palette),
+		spritor.allocator,
+	)
 	size: f32 = PALETTE_COLS * COLOR_SIZE
-	entity_id := traits.create(&p.world)
+	entity_id := traits.create(&p.systems.world)
 
 	traits.add(
-		&p.world,
+		&p.systems.world,
 		entity_id,
 		Pos{x = 70, y = 2, width = size, height = size},
 		Position_Type.Relative,
@@ -226,7 +185,6 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 		Background{color = rl.BROWN},
 	)
 
-	grid.entity_id = entity_id
 	rect := rl.Rectangle {
 		x      = 0,
 		y      = 0,
@@ -234,12 +192,12 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 		height = size,
 	}
 
-	for color, index in p.palette {
-		x, y := helpers.get_grid_cell(index, int(grid.cols))
+	for color, index in p.resources.palette {
+		x, y := helpers.get_grid_cell(index, int(spritor.columns))
 
-		entity_color_id := traits.create(&p.world)
+		entity_color_id := traits.create(&p.systems.world)
 
-		append(&grid.color_entities, entity_color_id)
+		append(&spritor.color_entities, entity_color_id)
 
 		payload := new(Color_Select_Event)
 		payload.header.kind = Event_Kind.Color_Select
@@ -252,7 +210,7 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 		rect_height: f32 = COLOR_SIZE
 
 		traits.add(
-			&p.world,
+			&p.systems.world,
 			entity_color_id,
 			Pos{x = rect_x, y = rect_y, width = rect_width, height = rect_height},
 			Position_Type.Relative,
@@ -260,19 +218,19 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 			On_Click{callback = on_color_click, payload = rawptr(payload)},
 		)
 
-		if p.selected_color == index {
+		if p.state.selected_color == index {
 			rect.x = rect_x
 			rect.y = rect_y
 			rect.width = rect_width
 			rect.height = rect_height
 		}
 
-		add_child(&p.world, entity_id, entity_color_id)
+		add_child(&p.systems.world, entity_id, entity_color_id)
 	}
 
-	primary_color_entity_id := traits.create(&p.world)
+	primary_color_entity_id := traits.create(&p.systems.world)
 	traits.add(
-		&p.world,
+		&p.systems.world,
 		primary_color_entity_id,
 		Pos{rect = rect},
 		Position_Type.Relative,
@@ -280,26 +238,31 @@ new_palette_grid :: proc(p: ^Pixore) -> Palette_Grid {
 		Border{kind = Border_Kind.Outside, width = 1, color = rl.WHITE},
 	)
 
-	add_child(&p.world, entity_id, primary_color_entity_id)
+	add_child(&p.systems.world, entity_id, primary_color_entity_id)
 
-	grid.current_color_entity_id = primary_color_entity_id
+	spritor.current_color_id = primary_color_entity_id
 
-	return grid
+	return entity_id
 }
 
 get_entity_color_id :: proc(p: Pixore, color_index: int) -> traits.Entity {
-	return p.spritor.palette.color_entities[color_index]
+	return p.editors.spritor.color_entities[color_index]
 }
 
 sync_selected_color :: proc(event: Color_Change) {
 	p := event.pixore
 
-	entity_id := get_entity_color_id(p^, p.selected_color)
-	current_color_entity_id := p.spritor.palette.current_color_entity_id
+	entity_id := get_entity_color_id(p^, p.state.selected_color)
+	current_color_entity_id := p.editors.spritor.current_color_id
 
-	target_pos := traits.expect_trait(p.world, entity_id, Pos, "Missing position in color entity")
+	target_pos := traits.expect_trait(
+		p.systems.world,
+		entity_id,
+		Pos,
+		"Missing position in color entity",
+	)
 	dest_pos := traits.expect_trait(
-		p.world,
+		p.systems.world,
 		current_color_entity_id,
 		Pos,
 		"Missing position in current color entity",
@@ -315,7 +278,7 @@ on_color_click :: proc(data: rawptr) {
 	event := (^Color_Select_Event)(data)
 	p := event.pixore
 
-	events.fire(p.dispatcher, Color_Change{pixore = p, index = event.color_index})
+	events.fire(p.systems.dispatcher, Color_Change{pixore = p, index = event.color_index})
 }
 
 Color_Select_Event :: struct {

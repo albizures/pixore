@@ -8,7 +8,6 @@ get_grid_cell :: proc(index, size: $Num) -> (x: Num, y: Num) {
 	return
 }
 
-
 get_grid_index :: proc(x, y, size: $Num) -> Num {
 	return x + y * size
 }

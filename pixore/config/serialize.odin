@@ -1,23 +1,25 @@
 package config
 
-import "../internals"
+import "../common"
+import "../palette"
+
 import "core:fmt"
 import "core:log"
 import "core:strings"
 import rl "vendor:raylib"
 
-serialize :: proc(config: internals.Config, allocator := context.allocator) -> string {
+serialize :: proc(config: common.Config, allocator := context.allocator) -> string {
 	log.info("Serializing config")
 
 	builder := strings.builder_make()
 	defer strings.builder_destroy(&builder)
 
 	write_string_property(&builder, "title", config.title)
-	write_number_property(&builder, "width", f32(config.width))
-	write_number_property(&builder, "height", f32(config.height))
-	write_number_property(&builder, "res_x", f32(config.resolution.x))
-	write_number_property(&builder, "res_y", f32(config.resolution.y))
-	write_palette(&builder, config.palette)
+	write_number_property(&builder, "width", f32(config.window_size.x))
+	write_number_property(&builder, "height", f32(config.window_size.y))
+	write_number_property(&builder, "res_x", f32(config.screen_size.x))
+	write_number_property(&builder, "res_y", f32(config.screen_size.y))
+	write_palette(&builder, config.palette[:])
 	write_number_property(&builder, "sprite_size", f32(config.sprite.size))
 	write_sprite(&builder, config.sprite)
 
@@ -55,19 +57,19 @@ write_palette :: proc(builder: ^strings.Builder, palette: []rl.Color) {
 	fmt.sbprintln(builder, "]", sep = "")
 }
 
-write_sprite :: proc(builder: ^strings.Builder, sprite: internals.Sprite) {
+write_sprite :: proc(builder: ^strings.Builder, sprite: common.Sprite) {
 	fmt.sbprint(builder, `sprite="""`, sep = "")
 	for item, index in sprite.data {
-		if i32(index) % sprite.size == 0 {
+		if index % int(sprite.size) == 0 {
 			fmt.sbprint(builder, "\n", sep = "")
 		}
 
 		assert(
-			item < len(internals.PALETTE_CODES),
+			item < len(palette.PALETTE_CODES),
 			"It seems the palette is too long, increase palette code",
 		)
 
-		fmt.sbprint(builder, internals.PALETTE_CODES[item], sep = "")
+		fmt.sbprint(builder, palette.PALETTE_CODES[item], sep = "")
 	}
 
 	fmt.sbprintln(builder, `"""`, sep = "")

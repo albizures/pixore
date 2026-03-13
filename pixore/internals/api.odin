@@ -11,13 +11,13 @@ get_color :: proc(id: int = -1) -> rl.Color {
 
 	id := id
 
-	if id >= len(p.palette) {
+	if id >= len(p.resources.palette) {
 		id = -1
 	}
 
-	id = id if id != -1 else p.selected_color
+	id = id if id != -1 else p.state.selected_color
 
-	color := p.palette[id]
+	color := p.resources.palette[id]
 
 	return color
 }
@@ -30,7 +30,7 @@ set_pixel :: proc(x, y: int, color: int = -1) {
 // Get the color of a specific pixel
 get_pixel :: proc(x, y: int) -> rl.Color {
 	p := (^Pixore)(context.user_ptr)
-	image := rl.LoadImageFromTexture(p.canvas.texture)
+	image := rl.LoadImageFromTexture(p.rendering.canvas.texture)
 	defer rl.UnloadImage(image)
 	color := rl.GetImageColor(image, c.int(x), c.int(y))
 
@@ -91,7 +91,7 @@ translate :: proc(x: f32 = 0, y: f32 = 0) {
 
 set_offset :: proc(x, y: f32) {
 	p := (^Pixore)(context.user_ptr)
-	p.camera.offset = rl.Vector2{x, y}
+	p.rendering.camera.offset = rl.Vector2{x, y}
 }
 
 delta_time :: proc() -> f32 {
@@ -100,7 +100,7 @@ delta_time :: proc() -> f32 {
 
 win_size :: proc() -> (x: int, y: int) {
 	p := (^Pixore)(context.user_ptr)
-	return int(p.resolution.x), int(p.resolution.y)
+	return int(p.config.screen_size.x), int(p.config.screen_size.y)
 }
 
 
@@ -127,7 +127,7 @@ spr :: proc(x, y, width, height, dest_x, dest_y: int) {
 	dest_y := f32(dest_y)
 
 	rl.DrawTexturePro(
-		p.sprite_texture.texture,
+		p.rendering.sprite_texture.texture,
 		{x, y, width, -height},
 		{dest_x, dest_y, width, height},
 		{0, 0},
@@ -145,7 +145,7 @@ get_mouse_position :: proc() -> rl.Vector2 {
 
 	// we need to snap to pixel grid because we are drawing to a texture
 	// but we get the get_mouse_position
-	pos = pos * (p.resolution / size)
+	pos = pos * (p.config.screen_size / size)
 	// clamp to canvas size
 	pos.x = math.floor(pos.x)
 	pos.y = math.floor(pos.y)
