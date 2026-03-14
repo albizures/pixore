@@ -88,7 +88,8 @@ get_array_value :: proc(values: map[string]ConfigValue, name: string) -> []Value
 }
 
 get_palette :: proc(colors: []Value, allocator: mem.Allocator) -> [dynamic]rl.Color {
-	palette := make([dynamic]rl.Color, 0, len(colors), allocator)
+	palette, allocator_error := make([dynamic]rl.Color, 0, len(colors), allocator)
+	assert(allocator_error == .None, "Unable to allocate memory for the palette")
 
 	for maybe_color in colors {
 		switch color in maybe_color {
@@ -107,6 +108,8 @@ get_sprite :: proc(sprite: string, allocator: mem.Allocator) -> [dynamic]u8 {
 	assert(replaceOk, "unable to replace enter by spaces")
 
 	values, allocator_error := make([dynamic]u8, 0, len(sprite), allocator)
+	assert(allocator_error == .None, "Unable to allocate memory for the sprite")
+
 
 	codes := palette.palette_codes_to_map()
 
