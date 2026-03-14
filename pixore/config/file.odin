@@ -128,7 +128,7 @@ create_project_config :: proc() -> common.Config {
 	sprite_default_size: u16 = 128
 	// TODO update this proc to ask for the values instead of using defaults
 	config := common.Config {
-		title = "My Odin Game",
+		title = "My Pixore Game",
 		window_size = {800, 500},
 		screen_size = {128, 128},
 		sprite = {size = sprite_default_size},

@@ -47,7 +47,7 @@ add_trait_5 :: proc(
 
 
 expect_trait :: proc(
-	world: World,
+	world: ^World,
 	entity: Entity,
 	$Type: typeid,
 	message: string,

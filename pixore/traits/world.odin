@@ -19,12 +19,13 @@ Store_Config :: struct {
 // An internal header to help us manage the raw dynamic arrays
 Store_Header :: struct {
 	// Points to [dynamic]T
-	instances: rawptr,
+	instances:     rawptr,
 	// list in the same order as in instances
-	entities:  [dynamic]Entity,
-	sparse:    map[Entity]int,
-	type_size: int,
-	config:    Store_Config,
+	entities:      [dynamic]Entity,
+	sparse:        map[Entity]int,
+	type_size:     int,
+	config:        Store_Config,
+	remove_entity: proc(world: ^World, entity: Entity),
 }
 
 add :: proc {
@@ -83,6 +84,9 @@ add_trait_to_world :: proc(world: ^World, $T: typeid, config := Store_Config{}) 
 	store.sparse = make(map[Entity]int, world.allocator)
 	store.entities = make([dynamic]Entity, world.allocator)
 	store.config = config
+	store.remove_entity = proc(world: ^World, entity: Entity) {
+		remove(world, entity, T)
+	}
 
 	world.stores[T] = store
 }
@@ -142,7 +146,7 @@ add_trait_to_entity :: proc(world: ^World, entity: Entity, data: $T) {
 }
 
 
-get_trait :: proc(world: World, entity: Entity, $T: typeid) -> (^T, bool) {
+get_trait :: proc(world: ^World, entity: Entity, $T: typeid) -> (^T, bool) {
 	store, ok := world.stores[T]
 	if !ok do return nil, false
 
@@ -163,4 +167,28 @@ get_store :: proc(world: ^World, $T: typeid) -> ^Store_Header {
 	}
 
 	return store
+}
+
+destroy_entity :: proc(world: ^World, entity: Entity) {
+	for _, store in world.stores {
+		if entity in store.sparse {
+			store.remove_entity(world, entity)
+		}
+	}
+}
+
+remove_entities_with :: proc(world: ^World, $T: typeid) {
+	store, ok := world.stores[T]
+	if !ok do return
+
+	entities_to_remove := make([dynamic]Entity, world.allocator)
+	defer delete(entities_to_remove)
+
+	for entity in store.entities {
+		append(&entities_to_remove, entity)
+	}
+
+	for entity in entities_to_remove {
+		destroy_entity(world, entity)
+	}
 }

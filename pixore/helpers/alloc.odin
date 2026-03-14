@@ -10,9 +10,7 @@ Arena :: struct {
 
 init_arena :: proc(arena: ^Arena, size: int, loc := #caller_location) {
 	backing_buffer, err := mem.alloc_bytes(size)
-	if err != nil {
-		panic("Unable to allocate memory for the spritor", loc = loc)
-	}
+	assert(err == .None, "Unable to allocate memory for the spritor", loc = loc)
 
 	mem.arena_init(&arena.core_arena, backing_buffer)
 	arena.allocator = mem.arena_allocator(&arena.core_arena)
