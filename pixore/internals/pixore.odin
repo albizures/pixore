@@ -87,7 +87,7 @@ init_systems :: proc(pixore: ^Pixore) {
 
 	traits.add(&systems.world, Children, traits.Store_Config {
 		on_before_remove = proc(world: ^traits.World, entity: traits.Entity) {
-			if children, ok := traits.get(world^, entity, Children); ok {
+			if children, ok := traits.get(world, entity, Children); ok {
 				free(&children.entities, children.allocator)
 			}
 		},
@@ -148,7 +148,7 @@ start :: proc(
 
 		// /* */rl.DrawFPS(0, 0)
 		/* */draw(state^)
-		draw_spritor(pixore^)
+		draw_spritor(pixore)
 
 		// end drawing canvas
 		rl.EndMode2D()

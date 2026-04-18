@@ -96,7 +96,7 @@ update_spritor :: proc(p: ^Pixore) {
 
 	if spritor.status == .Open {
 		rect := traits.expect_trait(
-			p.systems.world,
+			&p.systems.world,
 			spritor.spritor_id,
 			Pos,
 			"Spritor is missing a position",
@@ -108,19 +108,19 @@ update_spritor :: proc(p: ^Pixore) {
 	}
 }
 
-draw_spritor :: proc(p: Pixore) {
+draw_spritor :: proc(p: ^Pixore) {
 	if p.editors.spritor.status != .Open {
 		return
 	}
 
-	draw_with_traits(p.systems.world, p.editors.spritor.spritor_id)
+	draw_with_traits(&p.systems.world, p.editors.spritor.spritor_id)
 	draw_canvas(p, p.editors.spritor)
 }
 
-draw_canvas :: proc(p: Pixore, spritor: Spritor) {
-	offset := get_parent_offset(p.systems.world, spritor.canvas_id)
+draw_canvas :: proc(p: ^Pixore, spritor: Spritor) {
+	offset := get_parent_offset(&p.systems.world, spritor.canvas_id)
 	rect := traits.expect_trait(
-		p.systems.world,
+		&p.systems.world,
 		spritor.canvas_id,
 		Pos,
 		"Canvas is missing a position",
@@ -256,13 +256,13 @@ sync_selected_color :: proc(event: Color_Change) {
 	current_color_entity_id := p.editors.spritor.current_color_id
 
 	target_pos := traits.expect_trait(
-		p.systems.world,
+		&p.systems.world,
 		entity_id,
 		Pos,
 		"Missing position in color entity",
 	)
 	dest_pos := traits.expect_trait(
-		p.systems.world,
+		&p.systems.world,
 		current_color_entity_id,
 		Pos,
 		"Missing position in current color entity",

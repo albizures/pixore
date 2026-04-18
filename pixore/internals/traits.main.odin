@@ -22,7 +22,7 @@ add_one_child :: proc(
 	child_id: traits.Entity,
 	allocator := context.allocator,
 ) {
-	if children, has_children := traits.get_trait(world^, parent_id, Children); has_children {
+	if children, has_children := traits.get_trait(world, parent_id, Children); has_children {
 		append(&children.entities, child_id)
 		traits.add(world, child_id, Parent{entity = parent_id})
 

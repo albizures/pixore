@@ -19,13 +19,13 @@ On_Click :: struct {
 
 event_capturing :: proc(p: ^Pixore, id: traits.Entity, pos: rl.Vector2) {
 	system := &p.systems
-	rect, has_rect := traits.get_trait(system.world, id, Pos)
+	rect, has_rect := traits.get_trait(&system.world, id, Pos)
 
 	if !has_rect {
 		return
 	}
 
-	offset := get_parent_offset(system.world, id)
+	offset := get_parent_offset(&system.world, id)
 	real_rect := rect.rect
 	helpers.add_vec_to_rect(offset, &real_rect)
 
@@ -33,7 +33,7 @@ event_capturing :: proc(p: ^Pixore, id: traits.Entity, pos: rl.Vector2) {
 		return
 	}
 
-	children, has_children := traits.get_trait(system.world, id, Children)
+	children, has_children := traits.get_trait(&system.world, id, Children)
 
 	if has_children {
 		for child in children.entities {
@@ -42,7 +42,7 @@ event_capturing :: proc(p: ^Pixore, id: traits.Entity, pos: rl.Vector2) {
 	}
 
 
-	click, has_on_click := traits.get_trait(system.world, id, On_Click)
+	click, has_on_click := traits.get_trait(&system.world, id, On_Click)
 
 	if has_on_click {
 		click.callback(click.payload)
