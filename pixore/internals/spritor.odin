@@ -128,26 +128,13 @@ draw_canvas :: proc(p: ^Pixore, spritor: Spritor) {
 
 	helpers.add_rect_to_vec(rect, &offset)
 
-	pixel := rl.Rectangle {
-		width  = f32(spritor.scale),
-		height = f32(spritor.scale),
-	}
-
 	size := f32(p.resources.sprite.size) / f32(spritor.scale)
-	limit := spritor.offset + f32(spritor.scale)
-	start := int(helpers.get_grid_index(spritor.offset.x, spritor.offset.y, size))
-	end := int(helpers.get_grid_index(limit.x, limit.y, size))
 
-	for color_index, index in p.resources.sprite.data[start:end] {
-		color := get_color(int(color_index))
-
-		x, y := helpers.get_grid_cell(index, int(p.resources.sprite.size))
-
-		pixel.x = f32(x * spritor.scale) + offset.x
-		pixel.y = f32(y * spritor.scale) + offset.y
-
-		rl.DrawRectangleRec(pixel, color)
-	}
+	draw_texture_pro(
+		p.rendering.sprite_texture.texture,
+		{spritor.offset.x, spritor.offset.y, size, size},
+		{offset.x, offset.y, rect.width, rect.height},
+	)
 }
 
 new_canvas :: proc(p: ^Pixore) -> traits.Entity {

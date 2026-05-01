@@ -121,17 +121,32 @@ spr :: proc(x, y, width, height, dest_x, dest_y: int) {
 
 	width := f32(width)
 	height := f32(height)
-	x := f32(x)
-	y := -height - f32(y) // flipping because of OpenGL
 	dest_x := f32(dest_x)
 	dest_y := f32(dest_y)
 
-	rl.DrawTexturePro(
+	draw_texture_pro(
 		p.rendering.sprite_texture.texture,
-		{x, y, width, -height},
+		{f32(x), f32(y), width, height},
 		{dest_x, dest_y, width, height},
-		{0, 0},
-		0,
+	)
+}
+
+// handling the flipping for OpenGL
+draw_texture_pro :: proc(
+	texture: rl.Texture,
+	rect: rl.Rectangle,
+	dest: rl.Rectangle,
+	origin: rl.Vector2 = {},
+	rotation: f32 = 0,
+) {
+	y := -rect.height - f32(rect.y) // flipping because of OpenGL
+
+	rl.DrawTexturePro(
+		texture,
+		{rect.x, y, rect.width, -rect.height},
+		dest,
+		origin,
+		rotation,
 		rl.WHITE,
 	)
 }
