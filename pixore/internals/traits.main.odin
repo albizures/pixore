@@ -6,6 +6,7 @@ import "core:mem"
 Parent :: struct {
 	entity: traits.Entity,
 }
+
 Children :: struct {
 	allocator: mem.Allocator,
 	entities:  [dynamic]traits.Entity,

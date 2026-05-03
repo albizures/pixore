@@ -19,10 +19,6 @@ Spritor :: common.Spritor
 init_spritor :: proc(p: ^Pixore) {
 	spritor := &p.editors.spritor
 
-	helpers.init_arena(spritor, SPRITOR_ARENA_SIZE)
-	defer helpers.print_remaining(&p.systems, "systems")
-	defer helpers.print_remaining(spritor, "spritor")
-
 	win_x, win_y := win_size()
 
 	PADDING_TWO := PADDING * 2
@@ -66,14 +62,10 @@ open_spritor :: proc(p: ^Pixore) {
 close_spritor :: proc(p: ^Pixore) {
 	spritor := &p.editors.spritor
 	spritor.status = .Closed
-
-	helpers.print_remaining(spritor, "spritor")
 }
 
 uninit_spritor :: proc(spritor: ^Spritor) {
 	spritor.status = .Uninitialized
-
-	mem.arena_free_all(&spritor.arena.core_arena)
 }
 
 update_spritor :: proc(p: ^Pixore) {

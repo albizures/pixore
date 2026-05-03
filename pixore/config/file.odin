@@ -42,12 +42,9 @@ get_project_config :: proc() -> common.Config {
 		sprite = {size = get_u16_value(parser.values, "sprite_size")},
 	}
 
-	helpers.init_arena(&config, CONFIG_ARENA_SIZE)
 
 	config.palette = get_palette(get_array_value(parser.values, "palette"))
-	config.sprite.data = get_sprite(get_string_value(parser.values, "sprite"), config.allocator)
-
-	helpers.print_remaining(&config, "config")
+	config.sprite.data = get_sprite(get_string_value(parser.values, "sprite"))
 
 	return config
 }
@@ -103,7 +100,7 @@ get_palette :: proc(colors: []Value) -> (palette: memory.Palette) {
 	return palette
 }
 
-get_sprite :: proc(sprite: string, allocator: mem.Allocator) -> (values: memory.Sprite_Data) {
+get_sprite :: proc(sprite: string) -> (values: memory.Sprite_Data) {
 	sprite, replaceOk := strings.replace_all(sprite, "\n", "", context.temp_allocator)
 	defer delete(sprite)
 	assert(replaceOk, "unable to replace enter by spaces")
@@ -134,7 +131,6 @@ create_project_config :: proc() -> common.Config {
 		sprite = {size = memory.SPRITE_SIZE},
 	}
 
-	helpers.init_arena(&config, CONFIG_ARENA_SIZE)
 
 	config.palette = palette.create_default_palette()
 
@@ -144,7 +140,7 @@ create_project_config :: proc() -> common.Config {
 }
 
 save_project_config :: proc(config: ^common.Config) {
-	str := serialize(config, context.allocator)
+	str := serialize(config, context.temp_allocator)
 	defer delete(str)
 
 	data_as_bytes := transmute([]byte)(str)
@@ -169,8 +165,4 @@ save :: proc(p: ^common.Pixore) {
 	// TODO: add other things which can be updated
 
 	save_project_config(&p.config)
-}
-
-destroy :: proc(config: ^common.Config) {
-	mem.arena_free_all(&config.core_arena)
 }

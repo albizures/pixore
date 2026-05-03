@@ -17,7 +17,6 @@ Pixore :: struct {
 }
 
 Config :: struct {
-	using arena: helpers.Arena,
 	title:       string,
 	window_size: rl.Vector2,
 	screen_size: rl.Vector2,
@@ -63,7 +62,6 @@ Editors :: struct {
 
 // spritor is the union of sprite and editor together 😉
 Spritor :: struct {
-	using arena:      helpers.Arena,
 	status:           Editor_Status,
 	last_press_time:  f64,
 	// the time between two interactions to be considered a double click
