@@ -8,7 +8,7 @@ import "core:log"
 import "core:strings"
 import rl "vendor:raylib"
 
-serialize :: proc(config: common.Config, allocator := context.allocator) -> string {
+serialize :: proc(config: ^common.Config, allocator := context.allocator) -> string {
 	log.info("Serializing config")
 
 	builder := strings.builder_make()

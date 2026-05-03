@@ -1,15 +1,16 @@
 package pixore_internals
 
-import "../common"
-import co "../config"
-import "../events"
-import "../helpers"
-import "../traits"
 import "core:c"
 import "core:log"
 import "core:mem"
 import "core:strings"
 import rl "vendor:raylib"
+
+import "../common"
+import co "../config"
+import "../events"
+import "../helpers"
+import "../traits"
 
 Pixore :: common.Pixore
 RESOURCES_ARENA_SIZE := 20 * mem.Kilobyte
@@ -40,7 +41,7 @@ init_resources :: proc(pixore: ^Pixore) {
 
 	size := config.sprite.size
 
-	res.palette = make([dynamic]rl.Color, len(config.palette), res.allocator)
+	res.palette = config.palette
 	res.sprite.data = make([dynamic]u8, len(config.sprite.data), res.allocator)
 	res.sprite.size = size
 

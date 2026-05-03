@@ -1,0 +1,5 @@
+package pixore_memory
+
+SPRITE_SIZE :: 128
+SPRITE_PIXELS :: SPRITE_SIZE * SPRITE_SIZE
+PALETTE_SIZE :: 16

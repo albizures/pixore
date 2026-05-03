@@ -1,10 +1,11 @@
 package common
 
-import "../events"
-import "../helpers"
-import "../traits"
 import rl "vendor:raylib"
 
+import "../events"
+import "../helpers"
+import "../memory"
+import "../traits"
 
 Pixore :: struct {
 	editors:   Editors,
@@ -17,11 +18,10 @@ Pixore :: struct {
 
 Config :: struct {
 	using arena: helpers.Arena,
-	//
 	title:       string,
 	window_size: rl.Vector2,
 	screen_size: rl.Vector2,
-	palette:     [dynamic]rl.Color,
+	palette:     [memory.PALETTE_SIZE]rl.Color,
 	sprite:      Sprite,
 }
 
@@ -40,7 +40,7 @@ Sprite :: struct {
 Resources :: struct {
 	using arena: helpers.Arena,
 	// these start out based on the config
-	palette:     [dynamic]rl.Color,
+	palette:     [memory.PALETTE_SIZE]rl.Color,
 	sprite:      Sprite,
 
 	// in the future these should contain: sfx, patterns, etc

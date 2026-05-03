@@ -17,7 +17,7 @@ main :: proc() {
 	defer log.destroy_console_logger(logger)
 
 	pixore := p.create()
-	defer p.save(pixore)
+	defer p.save(&pixore)
 
 	state := Game_State{}
 

@@ -1,8 +1,5 @@
 package config
 
-import "../common"
-import "../helpers"
-import "../palette"
 import "core:c"
 import "core:fmt"
 import "core:log"
@@ -10,6 +7,11 @@ import "core:mem"
 import "core:os"
 import "core:strings"
 import rl "vendor:raylib"
+
+import "../common"
+import "../helpers"
+import "../memory"
+import "../palette"
 
 CONFIG_ARENA_SIZE := 20 * mem.Kilobyte
 
@@ -42,7 +44,7 @@ get_project_config :: proc() -> common.Config {
 
 	helpers.init_arena(&config, CONFIG_ARENA_SIZE)
 
-	config.palette = get_palette(get_array_value(parser.values, "palette"), config.allocator)
+	config.palette = get_palette(get_array_value(parser.values, "palette"))
 	config.sprite.data = get_sprite(get_string_value(parser.values, "sprite"), config.allocator)
 
 	helpers.print_remaining(&config, "config")
@@ -87,15 +89,14 @@ get_array_value :: proc(values: map[string]ConfigValue, name: string) -> []Value
 	return colors[:]
 }
 
-get_palette :: proc(colors: []Value, allocator: mem.Allocator) -> [dynamic]rl.Color {
-	palette, allocator_error := make([dynamic]rl.Color, 0, len(colors), allocator)
-	assert(allocator_error == .None, "Unable to allocate memory for the palette")
+get_palette :: proc(colors: []Value) -> (palette: [memory.PALETTE_SIZE]rl.Color) {
+	assert(len(colors) == memory.PALETTE_SIZE, "Invalid amount of colors")
 
-	for maybe_color in colors {
+	for maybe_color, index in colors {
 		switch color in maybe_color {
 		case string, f32, i64:
 		case uint:
-			append(&palette, rl.GetColor(c.uint(color)))
+			palette[index] = rl.GetColor(c.uint(color))
 		}
 	}
 
@@ -144,12 +145,12 @@ create_project_config :: proc() -> common.Config {
 		config.allocator,
 	)
 
-	save_project_config(config)
+	save_project_config(&config)
 
 	return config
 }
 
-save_project_config :: proc(config: common.Config) {
+save_project_config :: proc(config: ^common.Config) {
 	str := serialize(config, context.allocator)
 	defer delete(str)
 
@@ -165,17 +166,16 @@ save_project_config :: proc(config: common.Config) {
 }
 
 
-save :: proc(p: common.Pixore) {
+save :: proc(p: ^common.Pixore) {
 	log.info("Saving game")
 
-
 	assert(len(p.resources.palette) == len(p.config.palette), "palette length mismatch")
-	copy(p.resources.palette[:], p.config.palette[:])
+	p.resources.palette = p.config.palette
 	copy(p.resources.sprite.data[:], p.config.sprite.data[:])
 
 	// TODO: add other things which can be updated
 
-	save_project_config(p.config)
+	save_project_config(&p.config)
 }
 
 destroy :: proc(config: ^common.Config) {
