@@ -154,12 +154,6 @@ new_canvas :: proc(p: ^Pixore) -> traits.Entity {
 
 new_palette_grid :: proc(p: ^Pixore) -> traits.Entity {
 	spritor := &p.editors.spritor
-	spritor.color_entities = make(
-		[dynamic]traits.Entity,
-		0,
-		len(p.resources.palette),
-		spritor.allocator,
-	)
 	size: f32 = PALETTE_COLS * COLOR_SIZE
 	entity_id := traits.create(&p.systems.world)
 
@@ -184,7 +178,7 @@ new_palette_grid :: proc(p: ^Pixore) -> traits.Entity {
 
 		entity_color_id := traits.create(&p.systems.world)
 
-		append(&spritor.color_entities, entity_color_id)
+		spritor.color_entities[index] = entity_color_id
 
 		payload := new(Color_Select_Event)
 		payload.header.kind = Event_Kind.Color_Select

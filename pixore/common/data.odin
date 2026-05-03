@@ -80,7 +80,7 @@ Spritor :: struct {
 	canvas_id:        traits.Entity,
 	// highlight arround the current color
 	current_color_id: traits.Entity,
-	color_entities:   [dynamic]traits.Entity,
+	color_entities:   memory.Color_Entities,
 
 	// palette columns
 	columns:          u8,
