@@ -21,7 +21,7 @@ Config :: struct {
 	title:       string,
 	window_size: rl.Vector2,
 	screen_size: rl.Vector2,
-	palette:     [memory.PALETTE_SIZE]rl.Color,
+	palette:     memory.Palette,
 	sprite:      Sprite,
 }
 
@@ -34,14 +34,13 @@ Rendering :: struct {
 Sprite :: struct {
 	size: u16,
 	// this array should be a square of: <size> x <size>
-	data: [dynamic]u8,
+	data: memory.Sprite_Data,
 }
 
 Resources :: struct {
-	using arena: helpers.Arena,
 	// these start out based on the config
-	palette:     [memory.PALETTE_SIZE]rl.Color,
-	sprite:      Sprite,
+	palette: memory.Palette,
+	sprite:  Sprite,
 
 	// in the future these should contain: sfx, patterns, etc
 }

@@ -89,7 +89,7 @@ get_array_value :: proc(values: map[string]ConfigValue, name: string) -> []Value
 	return colors[:]
 }
 
-get_palette :: proc(colors: []Value) -> (palette: [memory.PALETTE_SIZE]rl.Color) {
+get_palette :: proc(colors: []Value) -> (palette: memory.Palette) {
 	assert(len(colors) == memory.PALETTE_SIZE, "Invalid amount of colors")
 
 	for maybe_color, index in colors {
@@ -103,22 +103,22 @@ get_palette :: proc(colors: []Value) -> (palette: [memory.PALETTE_SIZE]rl.Color)
 	return palette
 }
 
-get_sprite :: proc(sprite: string, allocator: mem.Allocator) -> [dynamic]u8 {
+get_sprite :: proc(sprite: string, allocator: mem.Allocator) -> (values: memory.Sprite_Data) {
 	sprite, replaceOk := strings.replace_all(sprite, "\n", "", context.temp_allocator)
 	defer delete(sprite)
 	assert(replaceOk, "unable to replace enter by spaces")
 
-	values, allocator_error := make([dynamic]u8, 0, len(sprite), allocator)
-	assert(allocator_error == .None, "Unable to allocate memory for the sprite")
+
+	assert(memory.SPRITE_PIXELS == len(sprite), "Invalid amount of sprite pixels")
 
 
 	codes := palette.palette_codes_to_map()
 
-	for r in sprite {
+	for r, index in sprite {
 		value, ok := codes[r]
 		assert(ok, "Invalid palette code found")
 
-		append(&values, value)
+		values[index] = value
 	}
 
 	return values
@@ -126,24 +126,17 @@ get_sprite :: proc(sprite: string, allocator: mem.Allocator) -> [dynamic]u8 {
 
 
 create_project_config :: proc() -> common.Config {
-	sprite_default_size: u16 = 128
 	// TODO update this proc to ask for the values instead of using defaults
 	config := common.Config {
 		title = "My Pixore Game",
 		window_size = {800, 500},
 		screen_size = {128, 128},
-		sprite = {size = sprite_default_size},
+		sprite = {size = memory.SPRITE_SIZE},
 	}
 
 	helpers.init_arena(&config, CONFIG_ARENA_SIZE)
 
-	config.palette = palette.create_default_palette(config.allocator)
-	config.sprite.data = make(
-		[dynamic]u8,
-		0,
-		sprite_default_size * sprite_default_size,
-		config.allocator,
-	)
+	config.palette = palette.create_default_palette()
 
 	save_project_config(&config)
 

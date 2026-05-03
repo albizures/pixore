@@ -41,11 +41,7 @@ palette_codes_to_map :: proc(allocator := context.allocator) -> map[rune]u8 {
 }
 
 
-create_default_palette :: proc(
-	allocator: mem.Allocator,
-) -> (
-	palette: [memory.PALETTE_SIZE]rl.Color,
-) {
+create_default_palette :: proc() -> (palette: memory.Palette) {
 	palette[0] = rl.Color{0, 0, 0, 0}
 	palette[1] = rl.Color{29, 43, 83, 255}
 	palette[2] = rl.Color{126, 37, 83, 255}

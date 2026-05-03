@@ -13,7 +13,6 @@ import "../helpers"
 import "../traits"
 
 Pixore :: common.Pixore
-RESOURCES_ARENA_SIZE := 20 * mem.Kilobyte
 SYSTEMS_ARENA_SIZE := 18 * mem.Kilobyte
 
 init :: proc(pixore: ^Pixore) {
@@ -36,13 +35,11 @@ init_resources :: proc(pixore: ^Pixore) {
 	config := &pixore.config
 	res := &pixore.resources
 
-	helpers.init_arena(res, RESOURCES_ARENA_SIZE)
-	defer helpers.print_remaining(res, "resources")
 
 	size := config.sprite.size
 
 	res.palette = config.palette
-	res.sprite.data = make([dynamic]u8, len(config.sprite.data), res.allocator)
+	res.sprite.data = config.sprite.data
 	res.sprite.size = size
 
 
